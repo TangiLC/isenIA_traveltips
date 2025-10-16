@@ -1,0 +1,40 @@
+services:
+  traveltips_db:
+    image: mysql
+    container_name: traveltips_db
+    networks:
+      - traveltips_network
+    environment:
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+    ports:
+      - 3307:3306
+    volumes:
+      - ./db:/var/lib/mysql
+      - ./bdd:/docker-entrypoint-initdb.d
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  traveltips_adminer:
+    image: adminer
+    container_name: traveltips_adminer
+    networks:
+      - traveltips_network
+    restart: always
+    ports:
+      - 8081:8080
+    depends_on:
+      traveltips_db:
+        condition: service_healthy
+
+networks:
+  traveltips_network:
+    driver: bridge
+
+volumes:
+  traveltips: 
