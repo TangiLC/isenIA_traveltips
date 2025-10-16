@@ -40,6 +40,7 @@ Elles seront gérées dans une **base relationnelle MySQL**, dont la structure p
 
 Les deux bases de données sont conteneurisées au sein d’un même **environnement Docker**.
 Chaque service (MongoDB et MySQL) dispose de son propre conteneur, défini dans un `docker-compose.yml` commun, facilitant le déploiement, l’isolation et la maintenance.
+Les variables d'environnement sont nécessaires pour le docker-compose, renommer le fichier `.env.template` en `.env` et adapter les éléments à votre environnement (identifiants, mots de passes, ports exposés).
 
 ## Architecture
 
