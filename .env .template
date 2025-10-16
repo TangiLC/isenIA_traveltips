@@ -1,0 +1,15 @@
+#MySQL config
+
+MYSQL_ROOT_PASSWORD=the_root_password
+MYSQL_DATABASE=the_database_name
+MYSQL_USER=the_use_name
+MYSQL_PASSWORD=the_user_password
+
+# MongoDB
+MONGO_ROOT_USER=admin
+MONGO_ROOT_PASSWORD=the_root_password
+MONGO_DATABASE=the_database_name
+
+# Mongo Express (interface web)
+MONGOEXPRESS_LOGIN=admin
+MONGOEXPRESS_PASSWORD=the_admin_password
