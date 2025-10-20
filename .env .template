@@ -6,17 +6,21 @@ MYSQL_DATABASE=the_mysql_database_name
 MYSQL_USER=the_use_name
 MYSQL_PASSWORD=the_user_password
 MYSQL_PORT=3307  #Port exposé par le container Docker
+MYSQL_HOST=localhost
 
 ## Adminer config
 ADMINER_PORT=8080 #Port exposé par le container Docker
+ADMINER_HOST=localhost
 
 ## MongoDB config
 MONGO_ROOT_USER=admin
 MONGO_ROOT_PASSWORD=the_root_password
 MONGO_DATABASE=the_mongo_database_name
 MONGODB_PORT=27017 #Port exposé par le container Docker
+MONGO_HOST=localhost
 
 ## Mongo Express IHM config
 MONGOEXPRESS_LOGIN=admin #connexion à l'interface
 MONGOEXPRESS_PASSWORD=the_admin_password
 MONGOXP_PORT=8081 #Port exposé par le container Docker
+MONGOXP_HOST=localhost
