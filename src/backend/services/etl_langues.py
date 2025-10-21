@@ -1,6 +1,11 @@
 import pandas as pd
 import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from connexion.mysql_connect import MySQLConnection
+from repository.langue_repository import LangueRepository
 
 
 class LanguageETL:
@@ -25,7 +30,7 @@ class LanguageETL:
             pd.DataFrame: le DataFrame extrait
         """
         if not file_path.exists():
-            raise FileNotFoundError(f"⌠Le fichier {file_path} n'existe pas.")
+            raise FileNotFoundError(f"❌ Le fichier {file_path} n'existe pas.")
 
         df = pd.read_csv(file_path)
         print(f"✅ Fichier {file_path.name} chargé : {len(df)} lignes")
@@ -201,16 +206,54 @@ class LanguageETL:
         return df_final
 
     def load(self, df):
-        """Étape 9: Sauvegarde du DataFrame dans le fichier de destination
+        """Étape 9: Sauvegarde du DataFrame dans le fichier CSV et MySQL
+        Utilise le repository au lieu d'accéder directement à la BDD
 
         Args:
             df (pd.DataFrame): DataFrame à sauvegarder
         """
-        # Créer le dossier de destination s'il n'existe pas
+        # 1. Sauvegarde CSV
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
-
         df.to_csv(self.output_path, index=False, encoding="utf-8")
-        print(f"\n✅ Étape 9 : Fichier sauvegardé : {self.output_path}")
+        print(f"\n✅ Fichier CSV sauvegardé : {self.output_path}")
+
+        # 2. Insertion dans MySQL via le Repository
+        try:
+            MySQLConnection.connect()
+            print("\n--- INSERTION DANS MYSQL (via Repository) ---")
+
+            inserted_count = 0
+            error_count = 0
+
+            for index, row in df.iterrows():
+                try:
+                    # Utilisation du repository pour l'insertion
+                    rowcount = LangueRepository.insert_ignore(
+                        iso639_2=row["639-2"],
+                        name_en=row["name_en"],
+                        name_fr=row["name_fr"],
+                        name_local=row["name_local"],
+                        branche_en=row["family"] if pd.notna(row["family"]) else None,
+                    )
+
+                    if rowcount > 0:
+                        inserted_count += 1
+
+                except Exception as e:
+                    error_count += 1
+                    print(f"❌ Erreur pour {row['639-2']}: {e}")
+
+            MySQLConnection.commit()
+            print(f"✅ MySQL - {inserted_count} langue(s) insérée(s)")
+            if error_count > 0:
+                print(f"⚠️  {error_count} erreur(s) rencontrée(s)")
+
+        except Exception as e:
+            print(f"❌ Erreur lors de l'insertion MySQL: {e}")
+            MySQLConnection.rollback()
+            raise
+        finally:
+            MySQLConnection.close()
 
     def run(self):
         """Exécute le pipeline ETL complet"""

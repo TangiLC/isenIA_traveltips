@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 
-class Connection:
+class MySQLConnection:
     """Classe de gestion de connexion MySQL"""
 
     connexion = None
@@ -197,17 +197,17 @@ class Connection:
 if __name__ == "__main__":
     try:
         # Connexion
-        Connection.connect()
+        MySQLConnection.connect()
 
         # Test de requête
-        result = Connection.execute_query("SELECT DATABASE()")
+        result = MySQLConnection.execute_query("SELECT DATABASE()")
         print(f"Base de données active: {result}")
 
         # Test sur la table Famille
-        familles = Connection.execute_query("SELECT * FROM Familles LIMIT 5")
+        familles = MySQLConnection.execute_query("SELECT * FROM Familles LIMIT 5")
         print(f"\nFamilles linguistiques: {familles}")
 
     except Exception as e:
         print(f"Erreur: {e}")
     finally:
-        Connection.close()
+        MySQLConnection.close()

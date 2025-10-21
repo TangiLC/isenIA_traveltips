@@ -1,7 +1,12 @@
 import pandas as pd
 import requests
 import time
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from connexion.mysql_connect import MySQLConnection
+from repository.currency_repository import CurrencyRepository
 
 
 class CurrencyETL:
@@ -180,16 +185,57 @@ class CurrencyETL:
         return df_enriched
 
     def load(self, df):
-        """Sauvegarde du DataFrame dans le fichier de destination
+        """Sauvegarde du DataFrame dans le fichier CSV et MySQL via le Repository
 
         Args:
             df (pd.DataFrame): DataFrame à sauvegarder
         """
-        # Créer le dossier de destination s'il n'existe pas
+        # 1. Sauvegarde CSV
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
-
         df.to_csv(self.output_path, index=False, encoding="utf-8")
-        print(f"\n✅ Fichier sauvegardé : {self.output_path}")
+        print(f"\nFichier CSV sauvegardé : {self.output_path}")
+
+        # 2. Insertion dans MySQL via le Repository
+        try:
+            MySQLConnection.connect()
+            print("\n--- INSERTION DANS MYSQL (via Repository) ---")
+
+            inserted_count = 0
+            error_count = 0
+
+            for index, row in df.iterrows():
+                try:
+                    # Certaines lignes peuvent contenir '-' (absence de données)
+                    code = (row.get("currency_code") or "").strip()
+                    name = (row.get("currency_name") or "").strip()
+                    symbol = (row.get("currency_symbol") or "").strip()
+
+                    if not code or code == "-":
+                        # Pas de code ISO 4217 -> on ignore proprement
+                        continue
+
+                    rc = CurrencyRepository.insert_ignore(
+                        iso4217=code,
+                        name=name if name and name != "-" else code,
+                        symbol=symbol if symbol and symbol != "-" else "",
+                    )
+                    if rc > 0:
+                        inserted_count += 1
+                except Exception as e:
+                    error_count += 1
+                    print(f"Erreur pour {row.get('currency_code')}: {e}")
+
+            MySQLConnection.commit()
+            print(f"MySQL - {inserted_count} monnaie(s) insérée(s)")
+            if error_count > 0:
+                print(f"{error_count} erreur(s) rencontrée(s)")
+
+        except Exception as e:
+            print(f"Erreur lors de l'insertion MySQL: {e}")
+            MySQLConnection.rollback()
+            raise
+        finally:
+            MySQLConnection.close()
 
     def run(self):
         """Exécute le pipeline ETL complet"""
