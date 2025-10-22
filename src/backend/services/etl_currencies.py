@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
-from repository.currency_repository import CurrencyRepository
+from repositories.currency_repository import CurrencyRepository
 
 
 class CurrencyETL:

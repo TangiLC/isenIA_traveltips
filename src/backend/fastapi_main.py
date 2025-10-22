@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import langue_routeur, currency_routeur
+from routers import langue_routeur, currency_routeur, ville_routeur, electricity_router
 
 
 # Création de l'application FastAPI
@@ -24,6 +24,8 @@ app.add_middleware(
 # Enregistrement des routeurs
 app.include_router(langue_routeur.router)
 app.include_router(currency_routeur.router)
+app.include_router(electricity_router.router)
+app.include_router(ville_routeur.router)
 
 
 @app.get("/", tags=["Root"])

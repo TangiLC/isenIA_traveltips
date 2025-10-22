@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
-from repository.langue_repository import LangueRepository
+from repositories.langue_repository import LangueRepository
 
 
 class LanguageETL:

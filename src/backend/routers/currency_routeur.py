@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Query
 from typing import List
 from connexion.mysql_connect import MySQLConnection
-from repository.currency_repository import CurrencyRepository
+from repositories.currency_repository import CurrencyRepository
 from schemas.currency_dto import (
     CurrencyResponse,
     CurrencyCreateRequest,

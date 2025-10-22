@@ -95,25 +95,23 @@ class MySQLConnection:
         """
         if cls.cursor is None:
             cls.connect()
-
         with open(path, "r", encoding="utf-8") as f:
             sql = f.read()
-
-        # Découpage naïf sur ';' et retrait des commentaires '--' et '#'
-        statements = []
-        for raw in sql.split(";"):
-            stmt = raw.strip()
-            if not stmt:
-                continue
-            lines = []
-            for line in stmt.splitlines():
-                l = line.strip()
-                if l.startswith("--") or l.startswith("#"):
-                    continue
-                lines.append(l)
-            stmt = "\n".join(lines).strip()
-            if stmt:
-                cls.execute_update(stmt)
+        # Supprimer les commentaires sur une ligne
+        sql = "\n".join(
+            line
+            for line in sql.splitlines()
+            if not line.strip().startswith(("--", "#"))
+        )
+        # Découper sur ';' et ignorer les instructions vides
+        statements = [stmt.strip() for stmt in sql.split(";") if stmt.strip()]
+        for stmt in statements:
+            if stmt:  # Éviter les requêtes vides
+                try:
+                    cls.execute_update(stmt)
+                except Error as e:
+                    print(f"❌ Erreur sur: {stmt}\nErreur: {e}")
+                    raise
 
     @classmethod
     def commit(cls):
@@ -172,20 +170,21 @@ class MySQLConnection:
 
     @classmethod
     def execute_update(cls, query, params=None):
-        """Exécute une requête INSERT/UPDATE/DELETE
-
-        Args:
-            query (str): Requête SQL
-            params (tuple/dict, optional): Paramètres de la requête
-
-        Returns:
-            int: Nombre de lignes affectées
-        """
+        """Exécute une requête INSERT/UPDATE/DELETE"""
         if cls.cursor is None:
             cls.connect()
-
         try:
-            cls.cursor.execute(query, params or ())
+            if (
+                params
+                and isinstance(params, (list, tuple))
+                and len(params) > 0
+                and isinstance(params[0], (list, tuple))
+            ):
+                # Cas d'une liste de tuples (executemany)
+                cls.cursor.executemany(query, params)
+            else:
+                # Cas d'un seul tuple (execute)
+                cls.cursor.execute(query, params or ())
             return cls.cursor.rowcount
         except Error as e:
             print(f"❌ Erreur d'exécution de mise à jour: {e}")

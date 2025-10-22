@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Query
 from typing import List
 from connexion.mysql_connect import MySQLConnection
-from repository.langue_repository import LangueRepository
+from repositories.langue_repository import LangueRepository
 from schemas.langue_dto import (
     LangueResponse,
     LangueCreateRequest,
