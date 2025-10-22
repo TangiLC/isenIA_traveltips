@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from schemas.ville_dto import VilleCreate, VilleUpdate, VilleResponse
 from repositories.ville_repository import VilleRepository
 
-router = APIRouter(prefix="/api/villes", tags=["villes"])
+router = APIRouter(prefix="/api/villes", tags=["Villes"])
 
 
 @router.get("/{geoname_id}", response_model=VilleResponse)

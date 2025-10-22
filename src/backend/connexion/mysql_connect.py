@@ -11,7 +11,7 @@ class MySQLConnection:
     connexion = None
     cursor = None
     base_dir = Path(__file__).resolve().parents[2]
-    init_sql_path = base_dir / "db" / "init_script_lang.sql"
+    init_sql_path = base_dir / "db" / "init_script.sql"
 
     @classmethod
     def _load_env_config(cls):

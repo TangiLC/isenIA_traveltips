@@ -2,6 +2,8 @@ import pandas as pd
 from pathlib import Path
 from typing import List, Dict
 import sys
+import requests
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
@@ -52,8 +54,6 @@ class ETLVille:
 
     def get_country_capitals(self, country_codes: List[str]) -> Dict[str, List[str]]:
         """Récupère les capitales pour une liste de codes pays"""
-        import requests
-        import time
 
         capitals_dict = {}
 
@@ -134,9 +134,10 @@ class ETLVille:
         if removed > 0:
             print(f"{removed} lignes sans nom supprimées")
 
-        # Trier par pays et population, puis ne garder que les 6 plus peuplées par pays
+        # Trier par pays et population, puis ne garder que les 4 plus peuplées par pays
+        # La V2 pourra avoir une base plus importante...
         df = df.sort_values(["country_3166a2", "pop"], ascending=[True, False])
-        df = df.groupby("country_3166a2").head(6).reset_index(drop=True)
+        df = df.groupby("country_3166a2").head().reset_index(drop=True)
 
         # Enrichissement: déterminer les capitales
         unique_countries = df["country_3166a2"].unique().tolist()
@@ -176,6 +177,7 @@ class ETLVille:
                 total_inserted += rows_affected
                 if (i + batch_size) % 10000 == 0:
                     print(f"{i + batch_size}/{len(records)} lignes traitées...")
+                MySQLConnection.commit()
             print(f"✅ {total_inserted} villes insérées (doublons ignorés)")
             return total_inserted
         except Exception as e:
