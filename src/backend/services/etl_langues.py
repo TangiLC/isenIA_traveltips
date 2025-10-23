@@ -30,10 +30,10 @@ class LanguageETL:
             pd.DataFrame: le DataFrame extrait
         """
         if not file_path.exists():
-            raise FileNotFoundError(f"❌ Le fichier {file_path} n'existe pas.")
+            raise FileNotFoundError(f"Le fichier {file_path} n'existe pas.")
 
         df = pd.read_csv(file_path)
-        print(f"✅ Fichier {file_path.name} chargé : {len(df)} lignes")
+        print(f"Fichier {file_path.name} chargé : {len(df)} lignes")
         return df
 
     def remove_rows_without_key(self, df, key_column):
@@ -63,7 +63,7 @@ class LanguageETL:
             pd.DataFrame: DataFrame fusionné
         """
         df_merged = pd.merge(df1, df2, on=key_column, how="inner")
-        print(f"✅ Fusion réalisée : {len(df_merged)} lignes résultantes")
+        print(f"Fusion réalisée : {len(df_merged)} lignes résultantes")
         return df_merged
 
     def select_and_rename_columns(self, df):
@@ -82,7 +82,7 @@ class LanguageETL:
             col for col in colonnes_a_garder if col not in df.columns
         ]
         if colonnes_manquantes:
-            print(f"⚠️  Colonnes manquantes : {colonnes_manquantes}")
+            print(f" Colonnes manquantes : {colonnes_manquantes}")
             colonnes_a_garder = [col for col in colonnes_a_garder if col in df.columns]
 
         df_final = df[colonnes_a_garder].copy()
@@ -98,7 +98,7 @@ class LanguageETL:
             }
         )
 
-        print(f"✅ Colonnes sélectionnées et renommées : {list(df_final.columns)}")
+        print(f"Colonnes sélectionnées et renommées : {list(df_final.columns)}")
         return df_final
 
     def remove_duplicates(self, df):
@@ -113,7 +113,7 @@ class LanguageETL:
         lignes_avant = len(df)
         df_no_dup = df.drop_duplicates()
         lignes_supprimees = lignes_avant - len(df_no_dup)
-        print(f"✅ Étape 6 : {lignes_supprimees} doublon(s) supprimé(s)")
+        print(f"Étape 6 : {lignes_supprimees} doublon(s) supprimé(s)")
         return df_no_dup
 
     def split_multiple_values(self, df):
@@ -138,7 +138,7 @@ class LanguageETL:
                     .str.strip()
                 )
 
-        print("✅ Étape 7 : Valeurs multiples traitées (premier élément conservé)")
+        print("Étape 7 : Valeurs multiples traitées (premier élément conservé)")
         return df
 
     def format_names(self, df):
@@ -159,7 +159,7 @@ class LanguageETL:
         if "name_fr" in df.columns:
             df["name_fr"] = df["name_fr"].str.lower()
 
-        print("✅ Étape 8 : Formatage des noms appliqué")
+        print("Étape 8 : Formatage des noms appliqué")
         return df
 
     def transform(self, df_iso1, df_iso2):
@@ -181,8 +181,8 @@ class LanguageETL:
         # Étape 1-2: Suppression des lignes sans clé "639-2"
         df_iso1_cleaned, supp_iso1 = self.remove_rows_without_key(df_iso1, "639-2")
         df_iso2_cleaned, supp_iso2 = self.remove_rows_without_key(df_iso2, "639-2")
-        print(f"✅ ISO1 : {supp_iso1} ligne(s) sans '639-2' supprimée(s)")
-        print(f"✅ ISO2 : {supp_iso2} ligne(s) sans '639-2' supprimée(s)")
+        print(f"ISO1 : {supp_iso1} ligne(s) sans '639-2' supprimée(s)")
+        print(f"ISO2 : {supp_iso2} ligne(s) sans '639-2' supprimée(s)")
 
         # Étape 3: Fusion
         df_merged = self.merge_dataframes(df_iso1_cleaned, df_iso2_cleaned, "639-2")
@@ -200,7 +200,7 @@ class LanguageETL:
         df_final = self.format_names(df_final)
 
         print(
-            f"✅ DataFrame final : {len(df_final)} lignes × {len(df_final.columns)} colonnes"
+            f"DataFrame final : {len(df_final)} lignes × {len(df_final.columns)} colonnes"
         )
 
         return df_final
@@ -215,7 +215,7 @@ class LanguageETL:
         # 1. Sauvegarde CSV
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(self.output_path, index=False, encoding="utf-8")
-        print(f"\n✅ Fichier CSV sauvegardé : {self.output_path}")
+        print(f"\nFichier CSV sauvegardé : {self.output_path}")
 
         # 2. Insertion dans MySQL via le Repository
         try:
@@ -241,15 +241,15 @@ class LanguageETL:
 
                 except Exception as e:
                     error_count += 1
-                    print(f"❌ Erreur pour {row['639-2']}: {e}")
+                    print(f"Erreur pour {row['639-2']}: {e}")
 
             MySQLConnection.commit()
-            print(f"✅ MySQL - {inserted_count} langue(s) insérée(s)")
+            print(f"MySQL - {inserted_count} langue(s) insérée(s)")
             if error_count > 0:
-                print(f"⚠️  {error_count} erreur(s) rencontrée(s)")
+                print(f" {error_count} erreur(s) rencontrée(s)")
 
         except Exception as e:
-            print(f"❌ Erreur lors de l'insertion MySQL: {e}")
+            print(f"Erreur lors de l'insertion MySQL: {e}")
             MySQLConnection.rollback()
             raise
         finally:
@@ -266,7 +266,7 @@ class LanguageETL:
             df_iso2 = self.extract_csv_to_df(self.iso2_path)
         except FileNotFoundError as e:
             print(e)
-            print("\n⚠️  Assurez-vous que les fichiers sont présents.")
+            print("\n Assurez-vous que les fichiers sont présents.")
             return None
 
         # TRANSFORMATION

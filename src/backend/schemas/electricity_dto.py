@@ -6,7 +6,7 @@ class ElectriciteResponse(BaseModel):
     """DTO de réponse pour un type de prise électrique"""
 
     plug_type: str = Field(
-        ..., min_length=1, max_length=1, description="Type de prise (A-N)"
+        ..., min_length=1, max_length=1, description="Type de prise (A-O)"
     )
     plug_png: str = Field(..., max_length=10, description="Nom du fichier image plug")
     sock_png: str = Field(..., max_length=10, description="Nom du fichier image socket")
@@ -16,7 +16,7 @@ class ElectriciteCreateRequest(BaseModel):
     """DTO pour la création/remplacement d'un type de prise"""
 
     plug_type: str = Field(
-        ..., min_length=1, max_length=1, description="Type de prise (A-N)"
+        ..., min_length=1, max_length=1, description="Type de prise (A-O)"
     )
     plug_png: str = Field(..., max_length=10, description="Nom du fichier image plug")
     sock_png: str = Field(..., max_length=10, description="Nom du fichier image socket")

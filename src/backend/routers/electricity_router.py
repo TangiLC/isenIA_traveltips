@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from connexion.mysql_connect import MySQLConnection
 from repositories.electricity_repository import ElectriciteRepository
@@ -8,6 +8,7 @@ from schemas.electricity_dto import (
     ElectriciteUpdateRequest,
     map_to_response,
 )
+from security.security import Security
 
 router = APIRouter(prefix="/api/electricite", tags=["Electricite"])
 
@@ -76,10 +77,13 @@ def get_plug_type_by_id(plug_type: str):
     description="Insère un nouveau type de prise ou remplace un existant (REPLACE INTO)",
     responses={
         201: {"description": "Type de prise créé ou remplacé"},
+        403: {"description": "Accès interdit (route sécurisé par JWT)"},
         500: {"description": "Erreur serveur lors de la création"},
     },
 )
-def create_or_replace_plug_type(plug: ElectriciteCreateRequest):
+def create_or_replace_plug_type(
+    plug: ElectriciteCreateRequest, _=Depends(Security.secured_route)
+):
     try:
         MySQLConnection.connect()
         rows = ElectriciteRepository.create_or_replace(
@@ -109,11 +113,14 @@ def create_or_replace_plug_type(plug: ElectriciteCreateRequest):
     description="Met à jour uniquement les champs fournis (plug_png, sock_png)",
     responses={
         200: {"description": "Type de prise mis à jour"},
+        403: {"description": "Accès interdit (route sécurisé par JWT)"},
         404: {"description": "Type de prise non trouvé"},
         500: {"description": "Erreur serveur"},
     },
 )
-def update_plug_type_partial(plug_type: str, updates: ElectriciteUpdateRequest):
+def update_plug_type_partial(
+    plug_type: str, updates: ElectriciteUpdateRequest, _=Depends(Security.secured_route)
+):
     try:
         MySQLConnection.connect()
 
@@ -156,11 +163,12 @@ def update_plug_type_partial(plug_type: str, updates: ElectriciteUpdateRequest):
     description="Supprime un type de prise par son identifiant",
     responses={
         200: {"description": "Type de prise supprimé"},
+        403: {"description": "Accès interdit (route sécurisé par JWT)"},
         404: {"description": "Type de prise non trouvé"},
         500: {"description": "Erreur serveur"},
     },
 )
-def delete_plug_type(plug_type: str):
+def delete_plug_type(plug_type: str, _=Depends(Security.secured_route)):
     try:
         MySQLConnection.connect()
 

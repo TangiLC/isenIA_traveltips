@@ -39,11 +39,9 @@ class LangueUpdateRequest(BaseModel):
 
 
 def map_to_response(db_row: dict) -> LangueResponse:
-    """Convertit une ligne de base de données en LangueResponse
-
-    Args:
-        db_row: Dictionnaire représentant une ligne de la base
-
+    """Convertit une ligne de base de données en LangueResponse\n
+    Args:\n
+        db_row: Dictionnaire représentant une ligne de la base\n
     Returns:
         Instance de LangueResponse
     """

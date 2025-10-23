@@ -266,11 +266,11 @@ class MeteoETL:
         # Insertion bulk (transaction unique)
         try:
             rows = repo.bulk_upsert(items)
-            print(f"✅ {rows} lignes upsert en base... attente 5s")
+            print(f"{rows} lignes upsert en base... attente 5s")
             time.sleep(5)
             return rows
         except Exception as e:
-            print(f"❌ Erreur bulk upsert: {e}")
+            print(f"Erreur bulk upsert: {e}")
             raise
 
     # ======================= ORCHESTRATION =======================

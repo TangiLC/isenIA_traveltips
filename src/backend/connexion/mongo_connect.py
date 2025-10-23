@@ -11,7 +11,6 @@ class MongoDBConnection:
     client = None
     db = None
     base_dir = Path(__file__).resolve().parents[2]
-    init_script_path = base_dir / "mongo-init" / "init_script.js"
 
     @classmethod
     def _load_env_config(cls):
@@ -66,19 +65,19 @@ class MongoDBConnection:
                 cls.db = cls.client[config["database"]]
 
                 server_info = cls.client.server_info()
-                print(f"✅ Connecté à MongoDB Server version {server_info['version']}")
-                print(f"✅ Base de données: {config['database']}")
+                print(f"Connecté à MongoDB Server version {server_info['version']}")
+                print(f"Base de données: {config['database']}")
 
             except ConnectionFailure as e:
-                print(f"❌ Erreur de connexion MongoDB: {e}")
+                print(f"Erreur de connexion MongoDB: {e}")
                 cls.client = None
                 cls.db = None
                 raise
             except ValueError as e:
-                print(f"❌ Erreur de configuration: {e}")
+                print(f"Erreur de configuration: {e}")
                 raise
             except Exception as e:
-                print(f"❌ Erreur inattendue: {e}")
+                print(f"Erreur inattendue: {e}")
                 cls.client = None
                 cls.db = None
                 raise
@@ -88,29 +87,14 @@ class MongoDBConnection:
             try:
                 if cls.init_script_path.exists():
                     cls.run_init_script()
-                    print("✅ Script d'initialisation exécuté.")
+                    print("Script d'initialisation exécuté.")
             except FileNotFoundError:
                 print(
                     f"ℹ️  Script d'init introuvable: {cls.init_script_path} (connexion OK)."
                 )
             except Exception as e:
-                print(f"❌ Échec exécution script d'init: {e}")
+                print(f"Échec exécution script d'init: {e}")
                 # Ne pas lever l'exception pour ne pas bloquer la connexion
-
-    @classmethod
-    def run_init_script(cls):
-        """
-        Exécute un script d'initialisation JavaScript basique.
-        Note: MongoDB n'exécute pas de JS depuis Python de la même manière que MySQL exécute du SQL.
-        Cette méthode est un placeholder pour une logique d'initialisation personnalisée.
-        """
-        if cls.db is None:
-            cls.connect()
-
-        # Pour MongoDB, l'initialisation se fait généralement via des scripts
-        # dans /docker-entrypoint-initdb.d/ au démarrage du conteneur.
-        # Cette méthode peut servir à créer des collections ou index supplémentaires.
-        print(f"ℹ️  Initialisation MongoDB (si nécessaire)...")
 
     @classmethod
     def close(cls):
@@ -119,15 +103,13 @@ class MongoDBConnection:
             cls.client.close()
             cls.client = None
             cls.db = None
-            print("✅ Connexion MongoDB fermée")
+            print("Connexion MongoDB fermée")
 
     @classmethod
     def get_collection(cls, collection_name):
-        """Retourne une collection MongoDB
-
+        """Retourne une collection MongoDB\n
         Args:
-            collection_name (str): Nom de la collection
-
+            collection_name (str): Nom de la collection\n
         Returns:
             Collection: Collection MongoDB
         """
@@ -137,14 +119,12 @@ class MongoDBConnection:
 
     @classmethod
     def find(cls, collection_name, query=None, projection=None, limit=0):
-        """Exécute une requête de recherche (équivalent SELECT)
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict, optional): Filtre de recherche
-            projection (dict, optional): Champs à retourner
-            limit (int, optional): Nombre maximum de documents
-
+        """Exécute une requête de recherche\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict, optional): Filtre de recherche\n
+            projection (dict, optional): Champs à retourner\n
+            limit (int, optional): Nombre maximum de documents\n
         Returns:
             list: Liste des documents trouvés
         """
@@ -160,18 +140,16 @@ class MongoDBConnection:
 
             return list(cursor)
         except OperationFailure as e:
-            print(f"❌ Erreur d'exécution de requête: {e}")
+            print(f"Erreur d'exécution de requête: {e}")
             raise
 
     @classmethod
     def find_one(cls, collection_name, query=None, projection=None):
-        """Trouve un seul document
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict, optional): Filtre de recherche
-            projection (dict, optional): Champs à retourner
-
+        """Trouve un seul document\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict, optional): Filtre de recherche\n
+            projection (dict, optional): Champs à retourner\n
         Returns:
             dict: Document trouvé ou None
         """
@@ -182,17 +160,15 @@ class MongoDBConnection:
             collection = cls.get_collection(collection_name)
             return collection.find_one(query or {}, projection)
         except OperationFailure as e:
-            print(f"❌ Erreur d'exécution de requête: {e}")
+            print(f"Erreur d'exécution de requête: {e}")
             raise
 
     @classmethod
     def insert_one(cls, collection_name, document):
-        """Insère un document (équivalent INSERT)
-
-        Args:
-            collection_name (str): Nom de la collection
-            document (dict): Document à insérer
-
+        """Insère un document\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            document (dict): Document à insérer\n
         Returns:
             InsertOneResult: Résultat de l'insertion
         """
@@ -202,20 +178,18 @@ class MongoDBConnection:
         try:
             collection = cls.get_collection(collection_name)
             result = collection.insert_one(document)
-            print(f"✅ Document inséré avec l'ID: {result.inserted_id}")
+            print(f"Document inséré avec l'ID: {result.inserted_id}")
             return result
         except OperationFailure as e:
-            print(f"❌ Erreur d'insertion: {e}")
+            print(f"Erreur d'insertion: {e}")
             raise
 
     @classmethod
     def insert_many(cls, collection_name, documents):
-        """Insère plusieurs documents
-
-        Args:
-            collection_name (str): Nom de la collection
-            documents (list): Liste de documents à insérer
-
+        """Insère plusieurs documents\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            documents (list): Liste de documents à insérer\n
         Returns:
             InsertManyResult: Résultat de l'insertion
         """
@@ -225,22 +199,20 @@ class MongoDBConnection:
         try:
             collection = cls.get_collection(collection_name)
             result = collection.insert_many(documents)
-            print(f"✅ {len(result.inserted_ids)} documents insérés")
+            print(f"{len(result.inserted_ids)} documents insérés")
             return result
         except OperationFailure as e:
-            print(f"❌ Erreur d'insertion multiple: {e}")
+            print(f"Erreur d'insertion multiple: {e}")
             raise
 
     @classmethod
     def update_one(cls, collection_name, query, update, upsert=False):
-        """Met à jour un document (équivalent UPDATE)
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict): Filtre de sélection
-            update (dict): Opérations de mise à jour
-            upsert (bool): Créer le document s'il n'existe pas
-
+        """Met à jour un document\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict): Filtre de sélection\n
+            update (dict): Opérations de mise à jour\n
+            upsert (bool): Créer le document s'il n'existe pas\n
         Returns:
             UpdateResult: Résultat de la mise à jour
         """
@@ -250,22 +222,20 @@ class MongoDBConnection:
         try:
             collection = cls.get_collection(collection_name)
             result = collection.update_one(query, update, upsert=upsert)
-            print(f"✅ {result.modified_count} document(s) modifié(s)")
+            print(f"{result.modified_count} document(s) modifié(s)")
             return result
         except OperationFailure as e:
-            print(f"❌ Erreur de mise à jour: {e}")
+            print(f"Erreur de mise à jour: {e}")
             raise
 
     @classmethod
     def update_many(cls, collection_name, query, update, upsert=False):
-        """Met à jour plusieurs documents
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict): Filtre de sélection
-            update (dict): Opérations de mise à jour
-            upsert (bool): Créer les documents s'ils n'existent pas
-
+        """Met à jour plusieurs documents\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict): Filtre de sélection\n
+            update (dict): Opérations de mise à jour\n
+            upsert (bool): Créer les documents s'ils n'existent pas\n
         Returns:
             UpdateResult: Résultat de la mise à jour
         """
@@ -275,22 +245,20 @@ class MongoDBConnection:
         try:
             collection = cls.get_collection(collection_name)
             result = collection.update_many(query, update, upsert=upsert)
-            print(f"✅ {result.modified_count} document(s) modifié(s)")
+            print(f"{result.modified_count} document(s) modifié(s)")
             return result
         except OperationFailure as e:
-            print(f"❌ Erreur de mise à jour multiple: {e}")
+            print(f"Erreur de mise à jour multiple: {e}")
             raise
 
     @classmethod
     def delete_one(cls, collection_name, query):
-        """Supprime un document (équivalent DELETE)
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict): Filtre de sélection
-
-        Returns:
-            DeleteResult: Résultat de la suppression
+        """Supprime un document\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict): Filtre de sélection\n
+        Returns:\n
+            DeleteResult: Résultat de la suppression\n
         """
         if cls.db is None:
             cls.connect()
@@ -298,20 +266,18 @@ class MongoDBConnection:
         try:
             collection = cls.get_collection(collection_name)
             result = collection.delete_one(query)
-            print(f"✅ {result.deleted_count} document(s) supprimé(s)")
+            print(f"{result.deleted_count} document(s) supprimé(s)")
             return result
         except OperationFailure as e:
-            print(f"❌ Erreur de suppression: {e}")
+            print(f"Erreur de suppression: {e}")
             raise
 
     @classmethod
     def delete_many(cls, collection_name, query):
-        """Supprime plusieurs documents
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict): Filtre de sélection
-
+        """Supprime plusieurs documents\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict): Filtre de sélection\n
         Returns:
             DeleteResult: Résultat de la suppression
         """
@@ -321,20 +287,18 @@ class MongoDBConnection:
         try:
             collection = cls.get_collection(collection_name)
             result = collection.delete_many(query)
-            print(f"✅ {result.deleted_count} document(s) supprimé(s)")
+            print(f"{result.deleted_count} document(s) supprimé(s)")
             return result
         except OperationFailure as e:
-            print(f"❌ Erreur de suppression multiple: {e}")
+            print(f"Erreur de suppression multiple: {e}")
             raise
 
     @classmethod
     def count_documents(cls, collection_name, query=None):
-        """Compte les documents dans une collection
-
-        Args:
-            collection_name (str): Nom de la collection
-            query (dict, optional): Filtre de sélection
-
+        """Compte les documents dans une collection\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            query (dict, optional): Filtre de sélection\n
         Returns:
             int: Nombre de documents
         """
@@ -345,17 +309,15 @@ class MongoDBConnection:
             collection = cls.get_collection(collection_name)
             return collection.count_documents(query or {})
         except OperationFailure as e:
-            print(f"❌ Erreur de comptage: {e}")
+            print(f"Erreur de comptage: {e}")
             raise
 
     @classmethod
     def aggregate(cls, collection_name, pipeline):
-        """Exécute une pipeline d'agrégation
-
-        Args:
-            collection_name (str): Nom de la collection
-            pipeline (list): Pipeline d'agrégation MongoDB
-
+        """Exécute une pipeline d'agrégation\n
+        Args:\n
+            collection_name (str): Nom de la collection\n
+            pipeline (list): Pipeline d'agrégation MongoDB\n
         Returns:
             list: Résultats de l'agrégation
         """
@@ -366,7 +328,7 @@ class MongoDBConnection:
             collection = cls.get_collection(collection_name)
             return list(collection.aggregate(pipeline))
         except OperationFailure as e:
-            print(f"❌ Erreur d'agrégation: {e}")
+            print(f"Erreur d'agrégation: {e}")
             raise
 
 

@@ -1,3 +1,5 @@
+import re
+import unicodedata
 import pandas as pd
 from pathlib import Path
 from typing import List, Dict
@@ -13,9 +15,44 @@ from repositories.ville_repository import VilleRepository
 class ETLVille:
     """ETL pour charger les villes depuis cities15000.txt vers la BDD"""
 
+    @staticmethod
+    def normalize(s: str) -> str:
+        if s is None:
+            return ""
+        s = unicodedata.normalize("NFD", s)  # supprime les accents non unicode
+        s = "".join(char for char in s if unicodedata.category(char) != "Mn")
+        s = s.lower()
+        s = re.sub(r"[^\w\s]", "", s)
+        s = re.sub(r"\s+", " ", s).strip()
+        return s
+
+    @staticmethod
+    def levenshtein(a: str, b: str) -> int:
+        if a == b:
+            return 0
+        if len(a) < len(b):
+            a, b = b, a
+        prev = list(range(len(b) + 1))
+        for i, ca in enumerate(a, 1):
+            cur = [i]
+            for j, cb in enumerate(b, 1):
+                cost = 0 if ca == cb else 1
+                cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost))
+            prev = cur
+        return prev[-1]
+
+    def similarity(self, a: str, b: str) -> float:
+        a_n, b_n = ETLVille.normalize(a), ETLVille.normalize(b)
+        if not a_n and not b_n:
+            return 1.0
+        dist = ETLVille.levenshtein(a_n, b_n)
+        max_len = max(len(a_n), len(b_n))
+        return 1.0 - dist / max_len
+
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
         self.input_path = self.base_dir / "raw_sources" / "cities15000.txt"
+        self.countries_path = self.base_dir / "raw_sources" / "countries_en.csv"
         self.output_path = self.base_dir / "src" / "db" / "villes.csv"
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -98,12 +135,16 @@ class ETLVille:
         )
 
         print(f"{len(df)} lignes extraites")
-        return df
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_countries = pd.read_csv(self.countries_path, dtype=str)
+
+        return {"villes": df, "pays": df_countries}
+
+    def transform(self, data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Transforme le DataFrame: ne garde que les colonnes nécessaires"""
         print("Transformation des données...")
-
+        df = data["villes"]
+        df_countries = data["pays"]
         # Ne garder que les colonnes utiles
         df = df[self.keep_columns].copy()
 
@@ -116,9 +157,13 @@ class ETLVille:
             print(f"{invalid_ids} lignes avec geoname_id invalide supprimées")
             df = df.dropna(subset=["geoname_id"])
 
+        # filtrage country_3166a2
+        valid_alpha2 = df_countries["alpha2"].dropna().str.strip().str.lower().tolist()
+        df["country_3166a2"] = df["country_3166a2"].fillna("").str.strip().str.lower()
+        df = df[df["country_3166a2"].isin(valid_alpha2)]
+
         # Nettoyer les valeurs textuelles
         df["name_en"] = df["name_en"].fillna("").str.strip()
-        df["country_3166a2"] = df["country_3166a2"].fillna("").str.strip().str.lower()
 
         # Convertir latitude et longitude en float
         df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
@@ -134,11 +179,6 @@ class ETLVille:
         if removed > 0:
             print(f"{removed} lignes sans nom supprimées")
 
-        # Trier par pays et population, puis ne garder que les 4 plus peuplées par pays
-        # La V2 pourra avoir une base plus importante...
-        df = df.sort_values(["country_3166a2", "pop"], ascending=[True, False])
-        df = df.groupby("country_3166a2").head().reset_index(drop=True)
-
         # Enrichissement: déterminer les capitales
         unique_countries = df["country_3166a2"].unique().tolist()
         capitals_dict = self.get_country_capitals(unique_countries)
@@ -147,10 +187,30 @@ class ETLVille:
         def is_capital(row):
             country_code = row["country_3166a2"]
             city_name = row["name_en"]
-            capitals = capitals_dict.get(country_code, [])
-            return city_name in capitals
+            candidates = capitals_dict.get(country_code, [])
+            return any(self.similarity(city_name, cap) >= 0.9 for cap in candidates)
 
         df["is_capital"] = df.apply(is_capital, axis=1)
+
+        # Trier par pays et population, puis ne garder que les 4 plus peuplées par pays
+        # La V2 pourra avoir une base plus importante...
+        df = df.sort_values(["country_3166a2", "pop"], ascending=[True, False])
+
+        # Pour chaque pays : garder la capitale + les 3 villes les plus peuplées (ou 4 si pas de capitale)
+        def select_cities_per_country(group):
+            capitals = group[group["is_capital"] == True]
+            non_capitals = group[group["is_capital"] == False]
+
+            if len(capitals) > 0:
+                return pd.concat([capitals.head(1), non_capitals.head(3)])
+            else:
+                return non_capitals.head(4)
+
+        df = (
+            df.groupby("country_3166a2", group_keys=False)
+            .apply(select_cities_per_country, include_groups=False)
+            .reset_index(drop=True)
+        )
 
         print(f"{len(df)} lignes transformées")
         return df
@@ -178,7 +238,7 @@ class ETLVille:
                 if (i + batch_size) % 10000 == 0:
                     print(f"{i + batch_size}/{len(records)} lignes traitées...")
                 MySQLConnection.commit()
-            print(f"✅ {total_inserted} villes insérées (doublons ignorés)")
+            print(f"{total_inserted} villes insérées (doublons ignorés)")
             return total_inserted
         except Exception as e:
             MySQLConnection.rollback()
@@ -193,8 +253,8 @@ class ETLVille:
         print("Démarrage ETL Villes")
         print("=" * 60 + "\n")
 
-        df = self.extract()
-        df = self.transform(df)
+        data = self.extract()
+        df = self.transform(data)
         self.load_csv(df)
         self.load_database(df)
 

@@ -1,7 +1,12 @@
 import pandas as pd
 import json
 import yaml
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from connexion.mysql_connect import MySQLConnection
+from repositories.country_repository import CountryRepository
 
 
 class CountryETL:
@@ -16,6 +21,7 @@ class CountryETL:
         self.yaml_path = self.raw_dir / "countries_mledoze.yml"
         self.elec_path = self.base_dir / "src" / "db" / "normes_elec_pays.csv"
         self.output_path = self.base_dir / "src" / "db" / "countries.csv"
+        self.alter_script_path = self.base_dir / "src" / "db" / "alter_script.sql"
 
     def extract_csv(self):
         """Extraction du fichier CSV countries_en
@@ -231,15 +237,89 @@ class CountryETL:
         )
         return df_final
 
-    def load(self, df):
-        """Sauvegarde du DataFrame dans le fichier CSV
+    def _parse_lat_lng(self, latlng_str: str):
+        if not latlng_str:
+            return ("", "")
+        parts = [p.strip() for p in latlng_str.split(",")]
+        if len(parts) >= 2:
+            return (parts[0], parts[1])
+        return ("", "")
 
-        Args:
-            df (pd.DataFrame): DataFrame à sauvegarder
+    def _split_csv_field(self, s: str):
+        if not s:
+            return []
+        return [x.strip() for x in s.split(",") if x.strip()]
+
+    def load(self, df):
         """
+        1) Sauvegarde CSV
+        2) Insertion/MAJ BDD:
+           - Pays
+           - Pays_Langues
+           - Pays_Monnaies
+           - Pays_Borders (a<b, pas de doublons, pas de a=a)
+           - Pays_Electricite (avec voltage/frequency)
+        """
+
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(self.output_path, index=False, encoding="utf-8")
         print(f"Fichier CSV sauvegardé : {self.output_path}")
+
+        inserted_pays = 0
+        l_lang = l_cur = l_bor = l_elec = 0
+        try:
+            MySQLConnection.connect()
+            print("\n--- INSERTION DANS MYSQL (via CountryRepository) ---")
+
+            for _, row in df.iterrows():
+                iso2 = (row.get("alpha2") or "").strip().lower()
+                iso3 = (row.get("alpha3") or "").strip().lower()
+                if not iso2 or not iso3:
+                    continue
+
+                name_en = (row.get("name_en") or "").strip()
+                name_fr = (row.get("name_fr") or "").strip()
+                name_local = (row.get("name_local") or "").strip()
+
+                lat_str, lng_str = self._parse_lat_lng(row.get("latlng") or "")
+
+                # upsert dans Pays
+                inserted_pays += CountryRepository.upsert_pays(
+                    iso2, iso3, name_en, name_fr, name_local, lat_str, lng_str
+                )
+
+                # langues
+                langues = self._split_csv_field(row.get("langues") or "")
+                l_lang += CountryRepository.insert_langues(iso2, langues)
+
+                # monnaies (FK vers Monnaies) – on insère seulement la liaison
+                currencies = self._split_csv_field(row.get("currencies") or "")
+                l_cur += CountryRepository.insert_monnaies(iso2, currencies)
+
+                # frontières avec contrainte de symétrie
+                borders = self._split_csv_field(row.get("borders") or "")
+                l_bor += CountryRepository.insert_borders(iso2, borders)
+
+                # électricité: types 'C,F', plus voltage/frequency
+                plug_types = self._split_csv_field(row.get("elec_type") or "")
+                voltage = (row.get("voltage") or "").strip()
+                frequency = (row.get("frequency") or "").strip()
+                l_elec += CountryRepository.insert_electricite(
+                    iso2, plug_types, voltage, frequency
+                )
+
+            MySQLConnection.commit()
+            print(f"Pays upsert: {inserted_pays}")
+            print(
+                f"Liaisons langues: {l_lang}, monnaies: {l_cur}, frontières: {l_bor}, électricité: {l_elec}"
+            )
+
+        except Exception as e:
+            MySQLConnection.rollback()
+            print(f"Erreur lors de l'insertion MySQL: {e}")
+            raise
+        finally:
+            MySQLConnection.close()
 
     def run(self):
         """Exécute le pipeline ETL complet"""
@@ -264,6 +344,16 @@ class CountryETL:
         print("\n--- PHASE LOAD ---")
         self.load(df_transformed)
 
+        try:
+            MySQLConnection.connect()
+            MySQLConnection.run_sql_script(str(self.alter_script_path))
+            MySQLConnection.commit()
+            print(f"Script SQL exécuté : {str(self.alter_script_path)}")
+        except Exception as e:
+            MySQLConnection.rollback()
+            print(f"Erreur lors de l’exécution du script : {e}")
+        finally:
+            MySQLConnection.close()
         return df_transformed
 
 

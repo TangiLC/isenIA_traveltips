@@ -27,8 +27,6 @@ class ConversationResponse(BaseModel):
         max_length=3,
         description="Code langue ISO 639-2",
     )
-
-    # Dictionnaire des phrases avec clés dynamiques
     sentences: Optional[Dict[str, str]] = Field(
         None, description="Phrases clé-valeur (ex: GREETING_INFORMAL: 'Hello')"
     )
@@ -44,10 +42,8 @@ class ConversationResponse(BaseModel):
         if not doc:
             return None
 
-        # Extraire les champs connus
         base_fields = {"_id": str(doc["_id"]), "lang639-2": doc.get("lang639-2", "")}
 
-        # Récupérer le sous-document 'sentences' s'il existe
         sentences = doc.get("sentences", {})
 
         response = cls(**base_fields)
@@ -67,7 +63,7 @@ class ConversationCreateRequest(BaseModel):
 
     sentences: Optional[Dict[str, str]] = Field(
         None,
-        description="Dictionnaire de phrases (ex: {'GREETING_INFORMAL': 'Hello', 'GREETING_MORNING': 'Good morning'})",
+        description="Dictionnaire de phrases (ex: {'GREETING_INFORMAL': 'Hello'})",
     )
 
     @field_validator("lang639_2")

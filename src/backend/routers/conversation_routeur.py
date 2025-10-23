@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from typing import List
 from bson.errors import InvalidId
 from connexion.mongo_connect import MongoDBConnection
@@ -9,6 +9,7 @@ from schemas.conversation_dto import (
     ConversationUpdateRequest,
     ConversationListResponse,
 )
+from security.security import Security
 
 router = APIRouter(prefix="/api/conversations", tags=["Conversations"])
 
@@ -133,7 +134,9 @@ def get_conversations_by_lang(
         500: {"description": "Erreur serveur"},
     },
 )
-def create_conversation(conversation: ConversationCreateRequest):
+def create_conversation(
+    conversation: ConversationCreateRequest, _=Depends(Security.secured_route)
+):
     try:
         MongoDBConnection.connect()
 
@@ -177,6 +180,7 @@ def create_conversation(conversation: ConversationCreateRequest):
 def update_conversation(
     conversation_id: str = Path(..., description="ID MongoDB de la conversation"),
     updates: ConversationUpdateRequest = ...,
+    _=Depends(Security.secured_route),
 ):
     try:
         MongoDBConnection.connect()
@@ -241,6 +245,7 @@ def update_conversation(
 def replace_conversation(
     conversation_id: str = Path(..., description="ID MongoDB de la conversation"),
     conversation: ConversationCreateRequest = ...,
+    _=Depends(Security.secured_route),
 ):
     try:
         MongoDBConnection.connect()
@@ -299,6 +304,7 @@ def replace_conversation(
 )
 def delete_conversation(
     conversation_id: str = Path(..., description="ID MongoDB de la conversation"),
+    _=Depends(Security.secured_route),
 ):
     try:
         MongoDBConnection.connect()

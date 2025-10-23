@@ -15,7 +15,7 @@ class Security:
 
     SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-in-prod")
     ALGORITHM = os.getenv("JWT_ALG", "HS256")
-    EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MIN", "60"))
+    EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MIN", "300"))
 
     security_scheme = HTTPBearer()
 

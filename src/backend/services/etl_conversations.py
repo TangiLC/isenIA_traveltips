@@ -23,11 +23,11 @@ class ConversationETL:
             pd.DataFrame: DataFrame brut extrait
         """
         if not self.source_path.exists():
-            raise FileNotFoundError(f"❌ Le fichier {self.source_path} n'existe pas.")
+            raise FileNotFoundError(f"Le fichier {self.source_path} n'existe pas.")
 
         print(f"📥 EXTRACT - Chargement du fichier {self.source_path.name}...")
         df = pd.read_csv(self.source_path, header=None, encoding="utf-8")
-        print(f"✅ CSV chargé : {df.shape[0]} lignes x {df.shape[1]} colonnes\n")
+        print(f"CSV chargé : {df.shape[0]} lignes x {df.shape[1]} colonnes\n")
         return df
 
     def transform(self, df):
@@ -63,7 +63,7 @@ class ConversationETL:
                 print(f"   Ligne {idx} -> {pct_vide*100:.1f}% vide")
 
         if lignes_a_supprimer:
-            print(f"\n⚠️  Lignes à supprimer (index originaux) : {lignes_a_supprimer}")
+            print(f"\n Lignes à supprimer (index originaux) : {lignes_a_supprimer}")
             df_t = df_t.drop(index=lignes_a_supprimer).reset_index(drop=True)
 
         # 5) Promouvoir la première ligne comme en-têtes, puis l'enlever du corps
@@ -101,7 +101,7 @@ class ConversationETL:
             )
         )
 
-        print(f"✅ Transformation terminée : {len(df_t)} conversations valides\n")
+        print(f"Transformation terminée : {len(df_t)} conversations valides\n")
         return df_t
 
     def load(self, df):
@@ -113,7 +113,7 @@ class ConversationETL:
         # 1. Sauvegarde CSV
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(self.output_path, index=False, encoding="utf-8")
-        print(f"\n✅ Fichier CSV sauvegardé : {self.output_path}")
+        print(f"\nFichier CSV sauvegardé : {self.output_path}")
 
         # 2. Insertion dans MongoDB
         try:
@@ -141,12 +141,12 @@ class ConversationETL:
                 documents.append({"lang639-2": lang_code, "sentences": sentences})
 
             # Vider la collection avant l'import
-            print(f"⚠️  Suppression des conversations existantes...")
+            print(f" Suppression des conversations existantes...")
             collection = MongoDBConnection.get_collection(
                 ConversationRepository.COLLECTION_NAME
             )
             delete_result = collection.delete_many({})
-            print(f"✅ {delete_result.deleted_count} documents supprimés")
+            print(f"{delete_result.deleted_count} documents supprimés")
 
             # Insertion en masse
             if documents:
@@ -154,14 +154,12 @@ class ConversationETL:
                 result = MongoDBConnection.insert_many(
                     ConversationRepository.COLLECTION_NAME, documents
                 )
-                print(
-                    f"✅ {len(result.inserted_ids)} conversations insérées avec succès"
-                )
+                print(f"{len(result.inserted_ids)} conversations insérées avec succès")
             else:
-                print("⚠️  Aucune conversation à insérer")
+                print(" Aucune conversation à insérer")
 
         except Exception as e:
-            print(f"❌ Erreur lors de l'insertion MongoDB: {e}")
+            print(f"Erreur lors de l'insertion MongoDB: {e}")
             import traceback
 
             traceback.print_exc()
@@ -179,10 +177,10 @@ class ConversationETL:
             df_raw = self.extract()
         except FileNotFoundError as e:
             print(e)
-            print("\n⚠️  Assurez-vous que le fichier est présent dans raw_sources/")
+            print("\n Assurez-vous que le fichier est présent dans raw_sources/")
             return None
         except Exception as e:
-            print(f"❌ Erreur lors de l'extraction: {e}")
+            print(f"Erreur lors de l'extraction: {e}")
             return None
 
         # TRANSFORMATION

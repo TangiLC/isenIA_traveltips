@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List
 from connexion.mysql_connect import MySQLConnection
 from repositories.langue_repository import LangueRepository
@@ -8,6 +8,7 @@ from schemas.langue_dto import (
     LangueUpdateRequest,
     map_to_response,
 )
+from security.security import Security
 
 
 router = APIRouter(prefix="/api/langues", tags=["Langues"])
@@ -123,7 +124,9 @@ def get_langues_by_famille(
         500: {"description": "Erreur serveur lors de la création"},
     },
 )
-def create_or_replace_langue(langue: LangueCreateRequest):
+def create_or_replace_langue(
+    langue: LangueCreateRequest, _=Depends(Security.secured_route)
+):
     """Crée ou remplace une langue"""
     try:
         MySQLConnection.connect()
@@ -164,7 +167,9 @@ def create_or_replace_langue(langue: LangueCreateRequest):
         500: {"description": "Erreur serveur"},
     },
 )
-def update_langue_partial(iso639_2: str, updates: LangueUpdateRequest):
+def update_langue_partial(
+    iso639_2: str, updates: LangueUpdateRequest, _=Depends(Security.secured_route)
+):
     """Mise à jour partielle d'une langue"""
     try:
         MySQLConnection.connect()
@@ -213,11 +218,12 @@ def update_langue_partial(iso639_2: str, updates: LangueUpdateRequest):
     description="Supprime une langue par son code ISO 639-2",
     responses={
         200: {"description": "Langue supprimée"},
+        403: {"description": "Accès interdit (route sécurisée par JWT)"},
         404: {"description": "Langue non trouvée"},
         500: {"description": "Erreur serveur"},
     },
 )
-def delete_langue(iso639_2: str):
+def delete_langue(iso639_2: str, _=Depends(Security.secured_route)):
     """Supprime une langue par son code ISO 639-2"""
     try:
         MySQLConnection.connect()

@@ -10,6 +10,7 @@ from routers import (
     electricity_router,
     week_meteo_routeur,
     conversation_routeur,
+    country_routeur,
 )
 
 
@@ -33,6 +34,7 @@ app.add_middleware(
 
 # Enregistrement des routeurs
 app.include_router(auth_routeur.router)
+app.include_router(country_routeur.router)
 app.include_router(langue_routeur.router)
 app.include_router(currency_routeur.router)
 app.include_router(electricity_router.router)

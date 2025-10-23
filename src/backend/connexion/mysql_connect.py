@@ -29,7 +29,6 @@ class MySQLConnection:
             "autocommit": False,
         }
 
-        # Vérifier que les paramètres obligatoires sont présents
         required_fields = ["database", "user", "password"]
         missing_fields = [field for field in required_fields if not config.get(field)]
 
@@ -53,20 +52,20 @@ class MySQLConnection:
 
                 if cls.connexion.is_connected():
                     db_info = cls.connexion.server_info
-                    print(f"✅ Connecté à MySQL Server version {db_info}")
-                    print(f"✅ Base de données: {config['database']}")
+                    print(f"Connecté à MySQL Server version {db_info}")
+                    print(f"Base de données: {config['database']}")
                 else:
                     raise Error("Échec de la connexion")
 
             except Error as e:
-                print(f"❌ Erreur de connexion MySQL: {e}")
+                print(f"Erreur de connexion MySQL: {e}")
                 cls.connexion = None
                 raise
             except ValueError as e:
-                print(f"❌ Erreur de configuration: {e}")
+                print(f"Erreur de configuration: {e}")
                 raise
             except Exception as e:
-                print(f"❌ Erreur inattendue: {e}")
+                print(f"Erreur inattendue: {e}")
                 cls.connexion = None
                 raise
 
@@ -77,21 +76,18 @@ class MySQLConnection:
         try:
             cls.run_sql_script(cls.init_sql_path)
             cls.commit()
-            print("✅ Script d'initialisation exécuté.")
+            print("Script d'initialisation exécuté.")
         except FileNotFoundError:
-            # On n'échoue pas la connexion si le fichier n'est pas présent,
-            # mais on remonte l'info clairement.
-            print(f"ℹ️  Script d'init introuvable: {cls.init_sql_path} (connexion OK).")
+            print(f"Script d'init introuvable: {cls.init_sql_path} (connexion OK).")
         except Exception as e:
             cls.rollback()
-            print(f"❌ Échec exécution script d'init: {e}")
+            print(f"Échec exécution script d'init: {e}")
             raise
 
     @classmethod
     def run_sql_script(cls, path):
         """
-        Exécute un script SQL simple (CREATE/INSERT/etc.) sans blocs DELIMITER.
-        Suppose un SQL "plat" où ';' termine chaque instruction.
+        Exécute un script SQL simple avec instructions terminées par ';'
         """
         if cls.cursor is None:
             cls.connect()
@@ -110,7 +106,7 @@ class MySQLConnection:
                 try:
                     cls.execute_update(stmt)
                 except Error as e:
-                    print(f"❌ Erreur sur: {stmt}\nErreur: {e}")
+                    print(f"Erreur sur: {stmt}\nErreur: {e}")
                     raise
 
     @classmethod
@@ -120,7 +116,7 @@ class MySQLConnection:
             try:
                 cls.connexion.commit()
             except Error as e:
-                print(f"❌ Erreur lors du commit: {e}")
+                print(f"Erreur lors du commit: {e}")
                 raise
 
     @classmethod
@@ -129,9 +125,9 @@ class MySQLConnection:
         if cls.connexion is not None:
             try:
                 cls.connexion.rollback()
-                print("⚠️  Transaction annulée (rollback)")
+                print(" Transaction annulée (rollback)")
             except Error as e:
-                print(f"❌ Erreur lors du rollback: {e}")
+                print(f"Erreur lors du rollback: {e}")
                 raise
 
     @classmethod
@@ -144,17 +140,15 @@ class MySQLConnection:
         if cls.connexion is not None:
             if cls.connexion.is_connected():
                 cls.connexion.close()
-                print("✅ Connexion MySQL fermée")
+                print("Connexion MySQL fermée")
             cls.connexion = None
 
     @classmethod
     def execute_query(cls, query, params=None):
-        """Exécute une requête SELECT et retourne les résultats
-
-        Args:
-            query (str): Requête SQL
-            params (tuple/dict, optional): Paramètres de la requête
-
+        """Exécute une requête SELECT et retourne les résultats\n
+        Args:\n
+            query (str): Requête SQL\n
+            params (tuple/dict, optional): Paramètres de la requête\n
         Returns:
             list: Liste des résultats
         """
@@ -165,7 +159,7 @@ class MySQLConnection:
             cls.cursor.execute(query, params or ())
             return cls.cursor.fetchall()
         except Error as e:
-            print(f"❌ Erreur d'exécution de requête: {e}")
+            print(f"Erreur d'exécution de requête: {e}")
             raise
 
     @classmethod
@@ -180,14 +174,12 @@ class MySQLConnection:
                 and len(params) > 0
                 and isinstance(params[0], (list, tuple))
             ):
-                # Cas d'une liste de tuples (executemany)
                 cls.cursor.executemany(query, params)
             else:
-                # Cas d'un seul tuple (execute)
                 cls.cursor.execute(query, params or ())
             return cls.cursor.rowcount
         except Error as e:
-            print(f"❌ Erreur d'exécution de mise à jour: {e}")
+            print(f"Erreur d'exécution de mise à jour: {e}")
             cls.rollback()
             raise
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List
 from connexion.mysql_connect import MySQLConnection
 from repositories.currency_repository import CurrencyRepository
@@ -8,6 +8,7 @@ from schemas.currency_dto import (
     CurrencyUpdateRequest,
     map_to_response,
 )
+from security.security import Security
 
 router = APIRouter(prefix="/api/monnaies", tags=["Monnaies"])
 
@@ -83,7 +84,9 @@ def get_currencies_by_name(
         500: {"description": "Erreur serveur lors de la création"},
     },
 )
-def create_or_replace_currency(currency: CurrencyCreateRequest):
+def create_or_replace_currency(
+    currency: CurrencyCreateRequest, _=Depends(Security.secured_route)
+):
     try:
         MySQLConnection.connect()
         rows = CurrencyRepository.create_or_replace(
@@ -117,7 +120,9 @@ def create_or_replace_currency(currency: CurrencyCreateRequest):
         500: {"description": "Erreur serveur"},
     },
 )
-def update_currency_partial(iso4217: str, updates: CurrencyUpdateRequest):
+def update_currency_partial(
+    iso4217: str, updates: CurrencyUpdateRequest, _=Depends(Security.secured_route)
+):
     try:
         MySQLConnection.connect()
 
@@ -164,7 +169,7 @@ def update_currency_partial(iso4217: str, updates: CurrencyUpdateRequest):
         500: {"description": "Erreur serveur"},
     },
 )
-def delete_currency(iso4217: str):
+def delete_currency(iso4217: str, _=Depends(Security.secured_route)):
     try:
         MySQLConnection.connect()
 
