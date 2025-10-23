@@ -2,11 +2,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from schemas.country_dto import CountryCreate, CountryUpdate, CountryResponse
 from repositories.country_repository import CountryRepository
-from security.security import Security
 from connexion.mysql_connect import MySQLConnection
+from security.security import Security
 
-
-router = APIRouter(prefix="/api/pays", tags=["Countries"])
+router = APIRouter(prefix="/api/countries", tags=["Countries"])
 
 
 @router.get(
@@ -22,7 +21,10 @@ router = APIRouter(prefix="/api/pays", tags=["Countries"])
     },
 )
 def get_country_by_id(alpha2: str):
-    """Récupère un pays par son code ISO alpha-2 (ex: 'fr', 'us', 'jp')"""
+    """
+    Récupère un pays par son code ISO alpha-2 (ex: 'fr', 'us', 'jp')
+    Retourne toutes les informations enrichies : langues complètes, monnaies, électricité, frontières
+    """
     alpha2 = alpha2.lower().strip()
 
     if len(alpha2) != 2:
@@ -31,7 +33,10 @@ def get_country_by_id(alpha2: str):
             detail="Le code pays doit contenir exactement 2 caractères (ISO 3166-1 alpha-2)",
         )
 
+    # Utiliser la version classique (compatible toutes versions MySQL)
+    # Pour version optimisée : get_by_alpha2_optimized()
     country = CountryRepository.get_by_alpha2(alpha2)
+
     if country is None:
         raise HTTPException(status_code=404, detail=f"Pays '{alpha2}' non trouvé")
 

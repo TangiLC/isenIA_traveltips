@@ -1,6 +1,7 @@
 from typing import Iterable, List, Tuple, Optional, Dict, Any
 from connexion.mysql_connect import MySQLConnection
 import unicodedata
+import json
 
 
 class CountryRepository:
@@ -11,7 +12,6 @@ class CountryRepository:
     def _normalize_string(text: str) -> str:
         """Normalise une chaîne : minuscules, sans accents"""
         text = text.lower().strip()
-        # Retirer les accents
         text = "".join(
             c
             for c in unicodedata.normalize("NFD", text)
@@ -22,56 +22,91 @@ class CountryRepository:
     # --- PAYS - LECTURE -----------------------------------------------------
     @staticmethod
     def get_by_alpha2(iso2: str) -> Optional[Dict[str, Any]]:
-        """Récupère un pays par son code ISO alpha-2 avec toutes ses relations"""
+        """
+        Récupère un pays par son code ISO alpha-2 avec toutes ses relations enrichies
+        Utilise JSON_ARRAYAGG pour agréger les objets complets
+        """
         iso2 = iso2.lower().strip()
 
-        query = """
+        # Requête principale avec les données de base
+        query_base = """
             SELECT 
-                p.iso3166a2, p.iso3166a3, p.name_en, p.name_fr, p.name_local, 
-                p.lat, p.lng
+                p.iso3166a2, 
+                p.iso3166a3, 
+                p.name_en, 
+                p.name_fr, 
+                p.name_local, 
+                p.lat, 
+                p.lng
             FROM Pays p
             WHERE p.iso3166a2 = %s
         """
-        result = MySQLConnection.execute_query(query, (iso2,))
+
+        result = MySQLConnection.execute_query(query_base, (iso2,))
+
         if not result:
             return None
 
         pays = result[0]
 
-        # Récupérer les langues
+        # Récupérer les langues avec leurs informations complètes
         langues_query = """
-            SELECT iso639_2 FROM Pays_Langues 
-            WHERE country_iso3166a2 = %s
+            SELECT 
+                l.iso639_2,
+                l.name_en,
+                l.name_fr,
+                l.name_local,
+                f.branche_en as famille_en,
+                f.branche_fr as famille_fr
+            FROM Pays_Langues pl
+            INNER JOIN Langues l ON pl.iso639_2 = l.iso639_2
+            LEFT JOIN Familles f ON l.famille_id = f.id
+            WHERE pl.country_iso3166a2 = %s
+            ORDER BY l.name_en
         """
         langues = MySQLConnection.execute_query(langues_query, (iso2,))
-        pays["langues"] = [l["iso639_2"] for l in langues] if langues else []
+        pays["langues"] = langues if langues else []
 
-        # Récupérer les monnaies
+        # Récupérer les monnaies avec leurs informations complètes
         currencies_query = """
-            SELECT currency_iso4217 FROM Pays_Monnaies 
-            WHERE country_iso3166a2 = %s
+            SELECT 
+                m.iso4217,
+                m.name,
+                m.symbol
+            FROM Pays_Monnaies pm
+            INNER JOIN Monnaies m ON pm.currency_iso4217 = m.iso4217
+            WHERE pm.country_iso3166a2 = %s
+            ORDER BY m.iso4217
         """
         currencies = MySQLConnection.execute_query(currencies_query, (iso2,))
-        pays["currencies"] = (
-            [c["currency_iso4217"] for c in currencies] if currencies else []
-        )
+        pays["currencies"] = currencies if currencies else []
 
-        # Récupérer les frontières (sans récursivité)
+        # Récupérer les pays frontaliers (sans récursivité)
+        # La table Pays_Borders stocke les relations dans un seul sens (ordre alphabétique)
+        # pour éviter les doublons symétriques (ex: fr→de existe, mais pas de→fr)
+        #
+        # Logique de la requête :
+        # - On joint la table Pays deux fois (p1 et p2) pour récupérer les infos des deux côtés
+        # - Le pays recherché (%s) peut être soit dans 'country_iso3166a2', soit dans 'border_iso3166a2'
+        # - Le CASE détermine quel pays voisin retourner (recherche dans les deux colonnes de la relation) :
+        #   * Si pays recherché = country → retourner border (p2)
+        #   * Si pays recherché = border  → retourner country (p1)
+        # - Résultat : liste des pays frontaliers avec leurs noms (iso, en, fr, local)
         borders_query = """
-            SELECT 
-                CASE 
+            SELECT
+                CASE
                     WHEN pb.country_iso3166a2 = %s THEN p2.iso3166a2
                     ELSE p1.iso3166a2
                 END as iso3166a2,
-                CASE 
+                CASE
                     WHEN pb.country_iso3166a2 = %s THEN p2.name_en
                     ELSE p1.name_en
                 END as name_en,
-                CASE 
+                CASE
                     WHEN pb.country_iso3166a2 = %s THEN p2.name_fr
                     ELSE p1.name_fr
                 END as name_fr,
-                CASE 
+                CASE
                     WHEN pb.country_iso3166a2 = %s THEN p2.name_local
                     ELSE p1.name_local
                 END as name_local
@@ -79,28 +114,148 @@ class CountryRepository:
             LEFT JOIN Pays p1 ON pb.country_iso3166a2 = p1.iso3166a2
             LEFT JOIN Pays p2 ON pb.border_iso3166a2 = p2.iso3166a2
             WHERE pb.country_iso3166a2 = %s OR pb.border_iso3166a2 = %s
+            ORDER BY name_en
         """
         borders = MySQLConnection.execute_query(
             borders_query, (iso2, iso2, iso2, iso2, iso2, iso2)
         )
         pays["borders"] = borders if borders else []
 
-        # Récupérer l'électricité (types, voltage, frequency)
+        # Récupérer l'électricité avec les informations complètes
         elec_query = """
-            SELECT plug_type, voltage, frequency 
-            FROM Pays_Electricite 
-            WHERE country_iso3166a2 = %s
+            SELECT 
+                e.plug_type,
+                e.plug_png,
+                e.sock_png,
+                pe.voltage,
+                pe.frequency
+            FROM Pays_Electricite pe
+            INNER JOIN Electricite e ON pe.plug_type = e.plug_type
+            WHERE pe.country_iso3166a2 = %s
+            ORDER BY e.plug_type
         """
-        elec = MySQLConnection.execute_query(elec_query, (iso2,))
+        electricity = MySQLConnection.execute_query(elec_query, (iso2,))
+        pays["electricity"] = electricity if electricity else []
 
-        if elec:
-            pays["electricity_types"] = [e["plug_type"] for e in elec]
-            pays["voltage"] = elec[0].get("voltage")
-            pays["frequency"] = elec[0].get("frequency")
-        else:
-            pays["electricity_types"] = []
-            pays["voltage"] = None
-            pays["frequency"] = None
+        return pays
+
+    @staticmethod
+    def get_by_alpha2_optimized(iso2: str) -> Optional[Dict[str, Any]]:
+        """
+        VERSION OPTIMISÉE avec JSON_ARRAYAGG (MySQL 5.7.22+)
+        Une seule requête avec tous les objets agrégés en JSON
+        """
+        iso2 = iso2.lower().strip()
+
+        # Note: JSON_ARRAYAGG nécessite MySQL 5.7.22+ ou MariaDB 10.5+
+        # Si version inférieure, utiliser get_by_alpha2() classique
+        query = """
+            SELECT 
+                p.iso3166a2, 
+                p.iso3166a3, 
+                p.name_en, 
+                p.name_fr, 
+                p.name_local, 
+                p.lat, 
+                p.lng,
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'iso639_2', l.iso639_2,
+                            'name_en', l.name_en,
+                            'name_fr', l.name_fr,
+                            'name_local', l.name_local,
+                            'famille_en', f.branche_en,
+                            'famille_fr', f.branche_fr
+                        )
+                    )
+                    FROM Pays_Langues pl
+                    INNER JOIN Langues l ON pl.iso639_2 = l.iso639_2
+                    LEFT JOIN Familles f ON l.famille_id = f.id
+                    WHERE pl.country_iso3166a2 = p.iso3166a2
+                ) as langues_json,
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'iso4217', m.iso4217,
+                            'name', m.name,
+                            'symbol', m.symbol
+                        )
+                    )
+                    FROM Pays_Monnaies pm
+                    INNER JOIN Monnaies m ON pm.currency_iso4217 = m.iso4217
+                    WHERE pm.country_iso3166a2 = p.iso3166a2
+                ) as currencies_json,
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'plug_type', e.plug_type,
+                            'plug_png', e.plug_png,
+                            'sock_png', e.sock_png,
+                            'voltage', pe.voltage,
+                            'frequency', pe.frequency
+                        )
+                    )
+                    FROM Pays_Electricite pe
+                    INNER JOIN Electricite e ON pe.plug_type = e.plug_type
+                    WHERE pe.country_iso3166a2 = p.iso3166a2
+                ) as electricity_json
+            FROM Pays p
+            WHERE p.iso3166a2 = %s
+        """
+
+        result = MySQLConnection.execute_query(query, (iso2,))
+
+        if not result:
+            return None
+
+        pays = result[0]
+
+        # Parser les JSON (si NULL, mettre liste vide)
+        pays["langues"] = (
+            json.loads(pays["langues_json"]) if pays["langues_json"] else []
+        )
+        pays["currencies"] = (
+            json.loads(pays["currencies_json"]) if pays["currencies_json"] else []
+        )
+        pays["electricity"] = (
+            json.loads(pays["electricity_json"]) if pays["electricity_json"] else []
+        )
+
+        # Supprimer les champs JSON temporaires
+        del pays["langues_json"]
+        del pays["currencies_json"]
+        del pays["electricity_json"]
+
+        # Récupérer les frontières (requête séparée car logique complexe)
+        borders_query = """
+            SELECT
+                CASE
+                    WHEN pb.country_iso3166a2 = %s THEN p2.iso3166a2
+                    ELSE p1.iso3166a2
+                END as iso3166a2,
+                CASE
+                    WHEN pb.country_iso3166a2 = %s THEN p2.name_en
+                    ELSE p1.name_en
+                END as name_en,
+                CASE
+                    WHEN pb.country_iso3166a2 = %s THEN p2.name_fr
+                    ELSE p1.name_fr
+                END as name_fr,
+                CASE
+                    WHEN pb.country_iso3166a2 = %s THEN p2.name_local
+                    ELSE p1.name_local
+                END as name_local
+            FROM Pays_Borders pb
+            LEFT JOIN Pays p1 ON pb.country_iso3166a2 = p1.iso3166a2
+            LEFT JOIN Pays p2 ON pb.border_iso3166a2 = p2.iso3166a2
+            WHERE pb.country_iso3166a2 = %s OR pb.border_iso3166a2 = %s
+            ORDER BY name_en
+        """
+        borders = MySQLConnection.execute_query(
+            borders_query, (iso2, iso2, iso2, iso2, iso2, iso2)
+        )
+        pays["borders"] = borders if borders else []
 
         return pays
 
@@ -113,7 +268,6 @@ class CountryRepository:
         normalized = CountryRepository._normalize_string(name)
         search_pattern = f"%{normalized}%"
 
-        # Recherche avec LOWER et pattern matching
         query = """
             SELECT DISTINCT
                 p.iso3166a2, p.iso3166a3, p.name_en, p.name_fr, p.name_local,
@@ -186,7 +340,6 @@ class CountryRepository:
         """Met à jour les champs d'un pays"""
         iso2 = iso2.lower().strip()
 
-        # Construire dynamiquement la requête UPDATE
         fields = []
         values = []
 
