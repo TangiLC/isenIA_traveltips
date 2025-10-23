@@ -31,10 +31,10 @@ class CurrencyETL:
             pd.DataFrame: le DataFrame extrait
         """
         if not file_path.exists():
-            raise FileNotFoundError(f"❌ Le fichier {file_path} n'existe pas.")
+            raise FileNotFoundError(f"Le fichier {file_path} n'existe pas.")
 
         df = pd.read_csv(file_path)
-        print(f"✅ Fichier {file_path.name} chargé : {len(df)} lignes")
+        print(f"Fichier {file_path.name} chargé : {len(df)} lignes")
         return df
 
     def remove_columns(self, df, columns_to_remove):
@@ -49,7 +49,7 @@ class CurrencyETL:
         """
         existing_columns = [col for col in columns_to_remove if col in df.columns]
         df_cleaned = df.drop(columns=existing_columns)
-        print(f"✅ Colonnes supprimées : {existing_columns}")
+        print(f"Colonnes supprimées : {existing_columns}")
         return df_cleaned
 
     def add_currency_columns(self, df):
@@ -65,7 +65,7 @@ class CurrencyETL:
         df["currency_symbol"] = None
         df["currency_code"] = None
         print(
-            "✅ Colonnes de devises ajoutées : currency_name, currency_symbol, currency_code"
+            "Colonnes de devises ajoutées : currency_name, currency_symbol, currency_code"
         )
         return df
 
@@ -97,18 +97,18 @@ class CurrencyETL:
                         "currency_code": currency.get("code", "-"),
                     }
                 else:
-                    print(f"⚠️  Aucune devise trouvée pour {alpha2_code}")
+                    print(f"Aucune devise trouvée pour {alpha2_code}")
                     return None
 
             else:
-                print(f"⚠️  Erreur {response.status_code} pour {alpha2_code}")
+                print(f"Erreur {response.status_code} pour {alpha2_code}")
                 return None
 
         except requests.exceptions.RequestException as e:
-            print(f"⚠️  Erreur de requête pour {alpha2_code}: {e}")
+            print(f"Erreur de requête pour {alpha2_code}: {e}")
             return None
         except Exception as e:
-            print(f"⚠️  Erreur inattendue pour {alpha2_code}: {e}")
+            print(f"Erreur inattendue pour {alpha2_code}: {e}")
             return None
 
     def enrich_with_currency_data(self, df):
@@ -137,19 +137,19 @@ class CurrencyETL:
                 df.at[index, "currency_symbol"] = currency_data["currency_symbol"]
                 df.at[index, "currency_code"] = currency_data["currency_code"]
                 print(
-                    f"    ✅ {currency_data['currency_code']} - {currency_data['currency_name']}"
+                    f"{currency_data['currency_code']} - {currency_data['currency_name']}"
                 )
             else:
                 df.at[index, "currency_name"] = "-"
                 df.at[index, "currency_symbol"] = "-"
                 df.at[index, "currency_code"] = "-"
-                print(f"    ⚠️  Données non disponibles")
+                print(f"Données non disponibles")
 
             # Pause de politesse entre les requêtes (sauf pour la dernière)
             if index < total_rows - 1:
                 time.sleep(0.1)
 
-        print(f"\n✅ Enrichissement terminé : {total_rows} pays traités")
+        print(f"Enrichissement terminé : {total_rows} pays traités")
         return df
 
     def transform(self, df):
@@ -165,9 +165,7 @@ class CurrencyETL:
 
         # Vérifier que la colonne alpha2 existe
         if "alpha2" not in df.columns:
-            raise ValueError(
-                "❌ La colonne 'alpha2' est requise dans le fichier source"
-            )
+            raise ValueError("La colonne 'alpha2' est requise dans le fichier source")
 
         # Étape 1: Suppression des colonnes
         df_cleaned = self.remove_columns(df, ["id", "alpha3"])
@@ -179,7 +177,7 @@ class CurrencyETL:
         df_enriched = self.enrich_with_currency_data(df_with_columns)
 
         print(
-            f"\n✅ DataFrame final : {len(df_enriched)} lignes × {len(df_enriched.columns)} colonnes"
+            f"DataFrame final : {len(df_enriched)} lignes x {len(df_enriched.columns)} colonnes"
         )
 
         return df_enriched
@@ -247,7 +245,7 @@ class CurrencyETL:
             df_countries = self.extract_csv_to_df(self.input_path)
         except FileNotFoundError as e:
             print(e)
-            print("\n⚠️  Assurez-vous que le fichier est présent.")
+            print("\nAssurez-vous que le fichier est présent.")
             return None
 
         # TRANSFORMATION
