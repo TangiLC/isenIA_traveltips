@@ -62,3 +62,15 @@ class ElectriciteRepository:
         """Supprime un type de prise"""
         query = "DELETE FROM Electricite WHERE plug_type = %s"
         return MySQLConnection.execute_update(query, (plug_type,))
+
+    @staticmethod
+    def find_countries_by_plug_type(plug_type: str) -> List[Dict[str, Any]]:
+        """Retourne la liste des pays utilisant un type de prise donné"""
+        query = """
+            SELECT p.iso3166a2, p.name_en, p.name_fr, pe.voltage, pe.frequency
+            FROM Pays p
+            INNER JOIN Pays_Electricite pe ON p.iso3166a2 = pe.country_iso3166a2
+            WHERE pe.plug_type = %s
+            ORDER BY p.name_en
+        """
+        return MySQLConnection.execute_query(query, (plug_type,))

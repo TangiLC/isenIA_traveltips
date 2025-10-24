@@ -137,162 +137,22 @@ class CountryRepository:
         electricity = MySQLConnection.execute_query(elec_query, (iso2,))
         pays["electricity"] = electricity if electricity else []
 
-        return pays
-
-    @staticmethod
-    def get_by_alpha2_optimized(iso2: str) -> Optional[Dict[str, Any]]:
-        """
-        VERSION OPTIMISÉE avec JSON_ARRAYAGG (MySQL 5.7.22+)
-        Une seule requête avec tous les objets agrégés en JSON
-        """
-        iso2 = iso2.lower().strip()
-
-        # Note: JSON_ARRAYAGG nécessite MySQL 5.7.22+ ou MariaDB 10.5+
-        # Si version inférieure, utiliser get_by_alpha2() classique
-        query = """
+        # Récupérer les villes associées au pays
+        cities_query = """
             SELECT 
-                p.iso3166a2, 
-                p.iso3166a3, 
-                p.name_en, 
-                p.name_fr, 
-                p.name_local, 
-                p.lat, 
-                p.lng,
-                (
-                    SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'iso639_2', l.iso639_2,
-                            'name_en', l.name_en,
-                            'name_fr', l.name_fr,
-                            'name_local', l.name_local,
-                            'famille_en', f.branche_en,
-                            'famille_fr', f.branche_fr
-                        )
-                    )
-                    FROM Pays_Langues pl
-                    INNER JOIN Langues l ON pl.iso639_2 = l.iso639_2
-                    LEFT JOIN Familles f ON l.famille_id = f.id
-                    WHERE pl.country_iso3166a2 = p.iso3166a2
-                ) as langues_json,
-                (
-                    SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'iso4217', m.iso4217,
-                            'name', m.name,
-                            'symbol', m.symbol
-                        )
-                    )
-                    FROM Pays_Monnaies pm
-                    INNER JOIN Monnaies m ON pm.currency_iso4217 = m.iso4217
-                    WHERE pm.country_iso3166a2 = p.iso3166a2
-                ) as currencies_json,
-                (
-                    SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'plug_type', e.plug_type,
-                            'plug_png', e.plug_png,
-                            'sock_png', e.sock_png,
-                            'voltage', pe.voltage,
-                            'frequency', pe.frequency
-                        )
-                    )
-                    FROM Pays_Electricite pe
-                    INNER JOIN Electricite e ON pe.plug_type = e.plug_type
-                    WHERE pe.country_iso3166a2 = p.iso3166a2
-                ) as electricity_json
-            FROM Pays p
-            WHERE p.iso3166a2 = %s
+                v.geoname_id,
+                v.name_en,
+                v.latitude,
+                v.longitude,
+                v.is_capital
+            FROM Villes v
+            WHERE v.country_3166a2 = %s
+            ORDER BY v.is_capital DESC, v.name_en
         """
-
-        result = MySQLConnection.execute_query(query, (iso2,))
-
-        if not result:
-            return None
-
-        pays = result[0]
-
-        # Parser les JSON (si NULL, mettre liste vide)
-        pays["langues"] = (
-            json.loads(pays["langues_json"]) if pays["langues_json"] else []
-        )
-        pays["currencies"] = (
-            json.loads(pays["currencies_json"]) if pays["currencies_json"] else []
-        )
-        pays["electricity"] = (
-            json.loads(pays["electricity_json"]) if pays["electricity_json"] else []
-        )
-
-        # Supprimer les champs JSON temporaires
-        del pays["langues_json"]
-        del pays["currencies_json"]
-        del pays["electricity_json"]
-
-        # Récupérer les frontières (requête séparée car logique complexe)
-        borders_query = """
-            SELECT
-                CASE
-                    WHEN pb.country_iso3166a2 = %s THEN p2.iso3166a2
-                    ELSE p1.iso3166a2
-                END as iso3166a2,
-                CASE
-                    WHEN pb.country_iso3166a2 = %s THEN p2.name_en
-                    ELSE p1.name_en
-                END as name_en,
-                CASE
-                    WHEN pb.country_iso3166a2 = %s THEN p2.name_fr
-                    ELSE p1.name_fr
-                END as name_fr,
-                CASE
-                    WHEN pb.country_iso3166a2 = %s THEN p2.name_local
-                    ELSE p1.name_local
-                END as name_local
-            FROM Pays_Borders pb
-            LEFT JOIN Pays p1 ON pb.country_iso3166a2 = p1.iso3166a2
-            LEFT JOIN Pays p2 ON pb.border_iso3166a2 = p2.iso3166a2
-            WHERE pb.country_iso3166a2 = %s OR pb.border_iso3166a2 = %s
-            ORDER BY name_en
-        """
-        borders = MySQLConnection.execute_query(
-            borders_query, (iso2, iso2, iso2, iso2, iso2, iso2)
-        )
-        pays["borders"] = borders if borders else []
+        cities = MySQLConnection.execute_query(cities_query, (iso2,))
+        pays["cities"] = cities if cities else []
 
         return pays
-
-    @staticmethod
-    def get_by_name(name: str) -> List[Dict[str, Any]]:
-        """
-        Recherche des pays par nom (name_en, name_fr, name_local)
-        Recherche insensible à la casse et aux accents
-        """
-        normalized = CountryRepository._normalize_string(name)
-        search_pattern = f"%{normalized}%"
-
-        query = """
-            SELECT DISTINCT
-                p.iso3166a2, p.iso3166a3, p.name_en, p.name_fr, p.name_local,
-                p.lat, p.lng
-            FROM Pays p
-            WHERE LOWER(p.name_en) LIKE %s
-               OR LOWER(p.name_fr) LIKE %s
-               OR LOWER(p.name_local) LIKE %s
-            ORDER BY p.name_en
-        """
-        results = MySQLConnection.execute_query(
-            query, (search_pattern, search_pattern, search_pattern)
-        )
-
-        if not results:
-            return []
-
-        # Pour chaque pays trouvé, récupérer ses relations complètes
-        countries = []
-        for row in results:
-            country = CountryRepository.get_by_alpha2(row["iso3166a2"])
-            if country:
-                countries.append(country)
-
-        return countries
 
     @staticmethod
     def get_all(skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
@@ -304,6 +164,40 @@ class CountryRepository:
             LIMIT %s OFFSET %s
         """
         return MySQLConnection.execute_query(query, (limit, skip)) or []
+
+    @staticmethod
+    def get_by_name(name: str) -> List[Dict[str, Any]]:
+        """
+        Recherche des pays par nom (name_en, name_fr, name_local)
+        Recherche insensible à la casse et aux accents
+        Approche en 2 étapes : récupération des codes ISO puis appel à get_by_alpha2()
+        """
+        normalized = CountryRepository._normalize_string(name)
+        search_pattern = f"%{normalized}%"
+
+        # Étape 1 : Récupérer les codes ISO 3166-1 alpha-2 correspondants
+        query_iso = """
+            SELECT DISTINCT p.iso3166a2
+            FROM Pays p
+            WHERE LOWER(p.name_en) LIKE %s
+               OR LOWER(p.name_fr) LIKE %s
+               OR LOWER(p.name_local) LIKE %s
+        """
+        results = MySQLConnection.execute_query(
+            query_iso, (search_pattern, search_pattern, search_pattern)
+        )
+
+        if not results:
+            return []
+
+        # Étape 2 : Récupérer les données complètes pour chaque pays trouvé
+        countries = []
+        for row in results:
+            country = CountryRepository.get_by_alpha2(row["iso3166a2"])
+            if country:
+                countries.append(country)
+
+        return countries
 
     # --- PAYS - ECRITURE ----------------------------------------------------
     @staticmethod

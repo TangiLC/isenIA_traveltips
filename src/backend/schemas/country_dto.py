@@ -40,6 +40,16 @@ class BorderCountry(BaseModel):
     name_local: str
 
 
+class CityInfo(BaseModel):
+    """Information d'une ville associée à un pays"""
+
+    geoname_id: int
+    name_en: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    is_capital: bool = False
+
+
 class CountryResponse(BaseModel):
     """Réponse complète avec toutes les relations et données enrichies"""
 
@@ -54,6 +64,7 @@ class CountryResponse(BaseModel):
     currencies: List[CurrencyInfo] = []
     borders: List[BorderCountry] = []
     electricity: List[ElectricityInfo] = []
+    cities: List[CityInfo] = []
 
 
 class CountryCreate(BaseModel):

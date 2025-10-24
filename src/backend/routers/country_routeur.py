@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/countries", tags=["Countries"])
 def get_country_by_id(alpha2: str):
     """
     Récupère un pays par son code ISO alpha-2 (ex: 'fr', 'us', 'jp')
-    Retourne toutes les informations enrichies : langues complètes, monnaies, électricité, frontières
+    Retourne toutes les informations enrichies : langues complètes, monnaies, électricité, frontières, villes principales
     """
     alpha2 = alpha2.lower().strip()
 
@@ -51,7 +51,9 @@ def get_country_by_id(alpha2: str):
     responses={
         200: {"description": "Liste de pays récupérée avec succès"},
         404: {"description": "Aucun pays trouvé avec ce nom"},
-        422: {"description": "Format des données incompatible"},
+        422: {
+            "description": "Format des données incompatible -Nom trop court (<4 caractères)"
+        },
         500: {"description": "Erreur serveur"},
     },
 )
@@ -60,9 +62,9 @@ def get_countries_by_name(name: str):
     Recherche des pays par nom (tolérant aux accents et à la casse)
     Exemples: 'france', 'côte ivoire', 'japan', 'allemagne'
     """
-    if not name or len(name.strip()) < 2:
+    if not name or len(name.strip()) < 4:
         raise HTTPException(
-            status_code=400, detail="Le nom doit contenir au moins 2 caractères"
+            status_code=422, detail="Le nom doit contenir au moins 4 caractères"
         )
 
     countries = CountryRepository.get_by_name(name)

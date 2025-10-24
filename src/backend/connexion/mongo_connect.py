@@ -82,20 +82,6 @@ class MongoDBConnection:
                 cls.db = None
                 raise
 
-        # Exécuter le script d'initialisation si présent
-        if cls.db is not None:
-            try:
-                if cls.init_script_path.exists():
-                    cls.run_init_script()
-                    print("Script d'initialisation exécuté.")
-            except FileNotFoundError:
-                print(
-                    f"ℹ️  Script d'init introuvable: {cls.init_script_path} (connexion OK)."
-                )
-            except Exception as e:
-                print(f"Échec exécution script d'init: {e}")
-                # Ne pas lever l'exception pour ne pas bloquer la connexion
-
     @classmethod
     def close(cls):
         """Ferme la connexion"""

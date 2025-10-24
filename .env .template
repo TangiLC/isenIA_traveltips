@@ -24,3 +24,14 @@ MONGOEXPRESS_LOGIN=admin #connexion à l'interface
 MONGOEXPRESS_PASSWORD=the_admin_password
 MONGOXP_PORT=8081 #Port exposé par le container Docker
 MONGOXP_HOST=localhost
+
+## FastAPI config
+FASTAPI_HOST=0.0.0.0
+FASTAPI_PORT=8000
+FASTAPI_RELOAD=true
+FASTAPI_WORKERS=1
+
+## JWT Token config
+JWT_SECRET=🧙‍♀️It-s_A_Secret_To_Everybody
+JWT_ALG=HS256
+JWT_EXPIRE_MIN=300
