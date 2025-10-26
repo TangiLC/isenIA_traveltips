@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
 from repositories.electricity_repository import ElectriciteRepository
+from utils.utils import ETLUtils
 
 
 class PlugTypesETL:
@@ -141,10 +142,6 @@ class PlugTypesETL:
         return self.output_path
 
     # ---------- DOWNLOAD ----------
-    def _suffix_from_title(self, title: str) -> str:
-        # "Plug type A" -> "A"
-        clean = re.sub(r"[^A-Za-z0-9 ]", "", title or "").strip()
-        return clean[-1] if clean else "X"
 
     def _download_file(
         self, url: str, path: Path, max_retries: int = 3, sleep_s: float = 0.4
@@ -180,7 +177,7 @@ class PlugTypesETL:
     def download_images(self, df: pd.DataFrame):
         print(f"\n--- Téléchargement images: {len(df)} lignes ---")
         for _, row in df.iterrows():
-            suffix = self._suffix_from_title(row.get("Title", ""))
+            suffix = ETLUtils.suffix_from_title(row.get("Title", ""))
             plug_url = row.get("3d-plug", "")
             sock_url = row.get("3d-sock", "")
 

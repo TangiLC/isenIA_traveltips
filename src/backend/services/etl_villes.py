@@ -10,44 +10,11 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
 from repositories.ville_repository import VilleRepository
+from utils.utils import ETLUtils
 
 
 class ETLVille:
     """ETL pour charger les villes depuis cities15000.txt vers la BDD"""
-
-    @staticmethod
-    def normalize(s: str) -> str:
-        if s is None:
-            return ""
-        s = unicodedata.normalize("NFD", s)  # supprime les accents non unicode
-        s = "".join(char for char in s if unicodedata.category(char) != "Mn")
-        s = s.lower()
-        s = re.sub(r"[^\w\s]", "", s)
-        s = re.sub(r"\s+", " ", s).strip()
-        return s
-
-    @staticmethod
-    def levenshtein(a: str, b: str) -> int:
-        if a == b:
-            return 0
-        if len(a) < len(b):
-            a, b = b, a
-        prev = list(range(len(b) + 1))
-        for i, ca in enumerate(a, 1):
-            cur = [i]
-            for j, cb in enumerate(b, 1):
-                cost = 0 if ca == cb else 1
-                cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost))
-            prev = cur
-        return prev[-1]
-
-    def similarity(self, a: str, b: str) -> float:
-        a_n, b_n = ETLVille.normalize(a), ETLVille.normalize(b)
-        if not a_n and not b_n:
-            return 1.0
-        dist = ETLVille.levenshtein(a_n, b_n)
-        max_len = max(len(a_n), len(b_n))
-        return 1.0 - dist / max_len
 
     def __init__(self):
         self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -189,7 +156,7 @@ class ETLVille:
             country_code = row["country_3166a2"]
             city_name = row["name_en"]
             candidates = capitals_dict.get(country_code, [])
-            return any(self.similarity(city_name, cap) >= 0.9 for cap in candidates)
+            return any(ETLUtils.similarity(city_name, cap) >= 0.8 for cap in candidates)
 
         df["is_capital"] = df.apply(is_capital, axis=1)
 

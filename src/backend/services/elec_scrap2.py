@@ -4,6 +4,8 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from pathlib import Path
 
+from utils.utils import ETLUtils
+
 
 class CountryPlugsETL:
     """Scrape https://www.worldstandards.eu/electricity/plug-voltage-by-country/
@@ -35,16 +37,6 @@ class CountryPlugsETL:
         r = self.session.get(self.url, timeout=30)
         r.raise_for_status()
         return BeautifulSoup(r.text, "html.parser")
-
-    @staticmethod
-    def _strip_parentheses(text: str) -> str:
-        # supprime toute portion " ( ... ) "
-        s = re.sub(r"\s*\([^)]*\)", "", text or "")
-        # normalise espaces autour des slashs
-        s = re.sub(r"\s*/\s*", " / ", s)
-        # condense espaces
-        s = re.sub(r"\s{2,}", " ", s).strip()
-        return s
 
     @staticmethod
     def _pre_note_html(td: BeautifulSoup) -> str:
@@ -81,15 +73,15 @@ class CountryPlugsETL:
 
             a1 = td1.select_one("a")
             country_raw = a1.get_text(strip=True) if a1 else td1.get_text(strip=True)
-            country = self._strip_parentheses(country_raw)
+            country = ETLUtils.strip_parentheses(country_raw)
 
             type_list = self._types_from_td(td2)
 
             voltage_raw = td3.get_text(" ", strip=True)
-            voltage = self._strip_parentheses(voltage_raw)
+            voltage = ETLUtils.strip_parentheses(voltage_raw)
 
             frequency_raw = td4.get_text(" ", strip=True)
-            frequency = self._strip_parentheses(
+            frequency = ETLUtils.strip_parentheses(
                 frequency_raw
             )  # Supprime les parenthèses
 

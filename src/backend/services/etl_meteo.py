@@ -15,15 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from models.week_meteo import WeekMeteo
 from repositories.week_meteo_repository import WeekMeteoRepository
-
-
-def _to_date(s: str) -> datetime.date:
-    return datetime.strptime(s, "%Y-%m-%d").date()
-
-
-def _iso_week_key(d: pd.Timestamp) -> Tuple[int, int]:
-    iso = d.isocalendar()
-    return (iso.year, iso.week)
+from utils.utils import ETLUtils
 
 
 @dataclass
@@ -211,7 +203,7 @@ class MeteoETL:
         s["week_start_date"] = s["date"] - pd.Timedelta(days=13)
 
         # Une seule ligne par semaine ISO (on garde la dernière date de chaque semaine)
-        s["iso_year"], s["iso_week"] = zip(*s["date"].apply(_iso_week_key))
+        s["iso_year"], s["iso_week"] = zip(*s["date"].apply(ETLUtils.iso_week_key))
         idx = s.groupby(["geoname_id", "iso_year", "iso_week"])["date"].idxmax()
         weekly = s.loc[idx].sort_values(["geoname_id", "iso_year", "iso_week"])
 
@@ -373,8 +365,8 @@ class MeteoETL:
             print("Pas de données à résumer. Exécutez run() d'abord.")
             return
 
-        d0 = _to_date(self.start_date)
-        d1 = _to_date(self.end_date)
+        d0 = ETLUtils.to_date(self.start_date)
+        d1 = ETLUtils.to_date(self.end_date)
         nb_villes = self.daily_df["geoname_id"].nunique()
 
         print("\n" + "=" * 60)

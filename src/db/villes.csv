@@ -680,7 +680,7 @@ geoname_id,name_en,latitude,longitude,pop,country_3166a2,is_capital
 1566083,Ho Chi Minh City,10.82302,106.62965,14002598,vn,False
 1581298,Haiphong,20.86481,106.68345,2625200,vn,False
 1586203,Cần Thơ,10.03711,105.78825,1507187,vn,False
-2135171,Port-Vila,-17.73648,168.31366,35901,vu,False
+2135171,Port-Vila,-17.73648,168.31366,35901,vu,True
 4035413,Apia,-13.83333,-171.76666,40407,ws,True
 71137,Sanaa,15.35452,44.20646,1937451,ye,True
 415189,Aden,12.77957,45.03852,1079670,ye,False
@@ -698,3 +698,4 @@ geoname_id,name_en,latitude,longitude,pop,country_3166a2,is_capital
 894701,Bulawayo,-20.15,28.58333,665952,zw,False
 1106542,Chitungwiza,-18.01274,31.07555,371246,zw,False
 884979,Mutare,-18.9707,32.67086,224802,zw,False
+11418,Washington DC,54.9,-1.5167,53526,us,True

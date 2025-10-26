@@ -10,8 +10,10 @@ class MonoRepoLauncher:
     """
     Mais pourquoi faire ça ?
        Pour appliquer le multi-threading
-    Est-ce nécessaire et plus efficace que lancer indépendamment les deux serveurs ou avec Docker ?
+    Est-ce nécessaire et plus efficace que lancer indépendamment ?
        Ni l'un ni l'autre
+    Une autre raison alors ?
+       La flemme d'ouvrir deux terminaux, bien sûr !
     Donc c'est indispensable !
     """
 

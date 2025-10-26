@@ -11,6 +11,7 @@ from routers import (
     week_meteo_routeur,
     conversation_routeur,
     country_routeur,
+    credits_routeur,
 )
 
 
@@ -41,6 +42,7 @@ app.include_router(electricity_router.router)
 app.include_router(ville_routeur.router)
 app.include_router(week_meteo_routeur.router)
 app.include_router(conversation_routeur.router)
+app.include_router(credits_routeur.router)
 
 
 @app.get("/", tags=["Root"])

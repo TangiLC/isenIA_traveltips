@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
 from repositories.country_repository import CountryRepository
+from utils.utils import ETLUtils
 
 
 class CountryETL:
@@ -237,19 +238,6 @@ class CountryETL:
         )
         return df_final
 
-    def _parse_lat_lng(self, latlng_str: str):
-        if not latlng_str:
-            return ("", "")
-        parts = [p.strip() for p in latlng_str.split(",")]
-        if len(parts) >= 2:
-            return (parts[0], parts[1])
-        return ("", "")
-
-    def _split_csv_field(self, s: str):
-        if not s:
-            return []
-        return [x.strip() for x in s.split(",") if x.strip()]
-
     def load(self, df):
         """
         1) Sauvegarde CSV
@@ -281,7 +269,7 @@ class CountryETL:
                 name_fr = (row.get("name_fr") or "").strip()
                 name_local = (row.get("name_local") or "").strip()
 
-                lat_str, lng_str = self._parse_lat_lng(row.get("latlng") or "")
+                lat_str, lng_str = ETLUtils.parse_lat_lng(row.get("latlng") or "")
 
                 # upsert dans Pays
                 inserted_pays += CountryRepository.upsert_pays(
@@ -289,19 +277,19 @@ class CountryETL:
                 )
 
                 # langues
-                langues = self._split_csv_field(row.get("langues") or "")
+                langues = ETLUtils.split_csv_field(row.get("langues") or "")
                 l_lang += CountryRepository.insert_langues(iso2, langues)
 
                 # monnaies (FK vers Monnaies) – on insère seulement la liaison
-                currencies = self._split_csv_field(row.get("currencies") or "")
+                currencies = ETLUtils.split_csv_field(row.get("currencies") or "")
                 l_cur += CountryRepository.insert_monnaies(iso2, currencies)
 
                 # frontières avec contrainte de symétrie
-                borders = self._split_csv_field(row.get("borders") or "")
+                borders = ETLUtils.split_csv_field(row.get("borders") or "")
                 l_bor += CountryRepository.insert_borders(iso2, borders)
 
                 # électricité: types 'C,F', plus voltage/frequency
-                plug_types = self._split_csv_field(row.get("elec_type") or "")
+                plug_types = ETLUtils.split_csv_field(row.get("elec_type") or "")
                 voltage = (row.get("voltage") or "").strip()
                 frequency = (row.get("frequency") or "").strip()
                 l_elec += CountryRepository.insert_electricite(
