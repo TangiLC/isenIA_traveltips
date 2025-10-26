@@ -1,0 +1,492 @@
+{
+  'openapi': '3.1.0',
+  'info':
+    {
+      'title': 'TravelTips API',
+      'description': 'API REST pour la gestion des données info pays',
+      'version': '1.0.0'
+    },
+  'paths':
+    {
+      '/api/countries/by_id/{alpha2}':
+        {
+          'get':
+            {
+              'tags': ['Countries'],
+              'summary': 'Récupère un pays par son code ISO alpha-2',
+              'description': "Récupère toutes les informations d'un pays (données de base + relations) selon son code ISO 3166-1 alpha-2",
+              'operationId': 'get_country_by_id_api_countries_by_id__alpha2__get',
+              'parameters':
+                [
+                  {
+                    'name': 'alpha2',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'title': 'Alpha2' }
+                  }
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Pays récupéré avec succès',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  '$ref': '#/components/schemas/CountryResponse'
+                                }
+                            }
+                        }
+                    },
+                  '404': { 'description': 'Aucun pays trouvé' },
+                  '422': { 'description': 'Format des données incompatible' },
+                  '500': { 'description': 'Erreur serveur' }
+                }
+            }
+        },
+      '/api/countries/by_name/{name}':
+        {
+          'get':
+            {
+              'tags': ['Countries'],
+              'summary': 'Recherche des pays par nom',
+              'description': 'Recherche dans name_en, name_fr et name_local (insensible à la casse et aux accents)',
+              'operationId': 'get_countries_by_name_api_countries_by_name__name__get',
+              'parameters':
+                [
+                  {
+                    'name': 'name',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'title': 'Name' }
+                  }
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Liste de pays récupérée avec succès',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'array',
+                                  'items':
+                                    {
+                                      '$ref': '#/components/schemas/CountryResponse'
+                                    },
+                                  'title': 'Response Get Countries By Name Api Countries By Name  Name  Get'
+                                }
+                            }
+                        }
+                    },
+                  '404': { 'description': 'Aucun pays trouvé avec ce nom' },
+                  '422':
+                    {
+                      'description': 'Format des données incompatible -Nom trop court (<4 caractères)'
+                    },
+                  '500': { 'description': 'Erreur serveur' }
+                }
+            }
+        },
+      '/api/countries/':
+        {
+          'get':
+            {
+              'tags': ['Countries'],
+              'summary': 'Lister tous les pays',
+              'description': 'Lister tous les pays de la base avec pagination (sans relations pour performance)',
+              'operationId': 'get_countries_api_countries__get',
+              'parameters':
+                [
+                  {
+                    'name': 'skip',
+                    'in': 'query',
+                    'required': false,
+                    'schema':
+                      {
+                        'type': 'integer',
+                        'minimum': 0,
+                        'default': 0,
+                        'title': 'Skip'
+                      }
+                  },
+                  {
+                    'name': 'limit',
+                    'in': 'query',
+                    'required': false,
+                    'schema':
+                      {
+                        'type': 'integer',
+                        'maximum': 500,
+                        'minimum': 1,
+                        'default': 100,
+                        'title': 'Limit'
+                      }
+                  }
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Liste récupérée avec succès',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'array',
+                                  'items':
+                                    {
+                                      '$ref': '#/components/schemas/CountryResponse'
+                                    },
+                                  'title': 'Response Get Countries Api Countries  Get'
+                                }
+                            }
+                        }
+                    },
+                  '422': { 'description': 'Format des données incompatible' },
+                  '500': { 'description': 'Erreur serveur' }
+                }
+            }
+        },
+      '/api/meteo/{geoname_id}':
+        {
+          'get':
+            {
+              'tags': ['Météo - Hebdo'],
+              'summary': 'Lister les semaines météo pour une ville',
+              'description': "Retourne les relevés météo hebdomadaires pour une ville identifiée par son **geoname_id**.\n\nVous pouvez restreindre la plage avec `start_date` et/ou `end_date` (inclusives).",
+              'operationId': 'get_weeks_for_city_api_meteo__geoname_id__get',
+              'parameters':
+                [
+                  {
+                    'name': 'geoname_id',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'integer', 'title': 'Geoname Id' }
+                  },
+                  {
+                    'name': 'start_date',
+                    'in': 'query',
+                    'required': false,
+                    'schema':
+                      {
+                        'anyOf':
+                          [
+                            { 'type': 'string', 'format': 'date' },
+                            { 'type': 'null' }
+                          ],
+                        'description': 'Date de début (incluse) au format ISO, ex: 2025-01-06.',
+                        'title': 'Start Date'
+                      },
+                    'description': 'Date de début (incluse) au format ISO, ex: 2025-01-06.'
+                  },
+                  {
+                    'name': 'end_date',
+                    'in': 'query',
+                    'required': false,
+                    'schema':
+                      {
+                        'anyOf':
+                          [
+                            { 'type': 'string', 'format': 'date' },
+                            { 'type': 'null' }
+                          ],
+                        'description': 'Date de fin (incluse) au format ISO, ex: 2025-02-03.',
+                        'title': 'End Date'
+                      },
+                    'description': 'Date de fin (incluse) au format ISO, ex: 2025-02-03.'
+                  }
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Liste des semaines correspondant aux critères.',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'array',
+                                  'items':
+                                    {
+                                      '$ref': '#/components/schemas/WeekMeteoResponse'
+                                    },
+                                  'title': 'Response Get Weeks For City Api Meteo  Geoname Id  Get'
+                                }
+                            }
+                        }
+                    },
+                  '404':
+                    {
+                      'description': 'Aucune donnée hebdomadaire trouvée pour les critères fournis.'
+                    },
+                  '422':
+                    {
+                      'description': 'Validation Error',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  '$ref': '#/components/schemas/HTTPValidationError'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+      {
+        'put':
+          {
+            'tags': ['Météo - Hebdo'],
+            'summary': 'Mettre à jour une semaine existante',
+            'description': 'Applique des modifications partielles sur une semaine identifiée par la clé composite `geoname_id` + `week_start_date`. Route sécurisée.',
+            'operationId': 'update_one_api_meteo__geoname_id___week_start_date__put',
+            'security': [{ 'HTTPBearer': [] }],
+            'parameters':
+              [
+                {
+                  'name': 'geoname_id',
+                  'in': 'path',
+                  'required': true,
+                  'schema': { 'type': 'integer', 'title': 'Geoname Id' }
+                },
+                {
+                  'name': 'week_start_date',
+                  'in': 'path',
+                  'required': true,
+                  'schema':
+                    {
+                      'type': 'string',
+                      'format': 'date',
+                      'title': 'Week Start Date'
+                    }
+                }
+              ],
+            'requestBody':
+              {
+                'required': true,
+                'content':
+                  {
+                    'application/json':
+                      {
+                        'schema':
+                          {
+                            '$ref': '#/components/schemas/WeekMeteoUpdate',
+                            'description': 'Champs à modifier (seuls les champs fournis sont pris en compte).',
+                            'examples':
+                              {
+                                'patch':
+                                  {
+                                    'summary': 'Modifier précipitations et ensoleillement',
+                                    'value':
+                                      { 'precip_mm': 12.0, 'sun_hours': 25.0 }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              },
+            'responses':
+              {
+                '200':
+                  {
+                    'description': 'Semaine mise à jour.',
+                    'content':
+                      {
+                        'application/json':
+                          {
+                            'schema':
+                              {
+                                '$ref': '#/components/schemas/WeekMeteoResponse'
+                              }
+                          }
+                      }
+                  },
+                '401':
+                  { 'description': 'Authentification requise ou invalide.' },
+                '404': { 'description': 'Semaine non trouvée.' },
+                '422':
+                  { 'description': 'Paramètres ou corps de requête invalides.' }
+              }
+          },
+        'delete':
+          {
+            'tags': ['Météo - Hebdo'],
+            'summary': 'Supprimer une semaine',
+            'description': 'Supprime la semaine identifiée par `geoname_id` et `week_start_date`. Route sécurisée.',
+            'operationId': 'delete_one_api_meteo__geoname_id___week_start_date__delete',
+            'security': [{ 'HTTPBearer': [] }],
+            'parameters':
+              [
+                {
+                  'name': 'geoname_id',
+                  'in': 'path',
+                  'required': true,
+                  'schema': { 'type': 'integer', 'title': 'Geoname Id' }
+                },
+                {
+                  'name': 'week_start_date',
+                  'in': 'path',
+                  'required': true,
+                  'schema':
+                    {
+                      'type': 'string',
+                      'format': 'date',
+                      'title': 'Week Start Date'
+                    }
+                }
+              ],
+            'responses':
+              {
+                '204': { 'description': 'Semaine supprimée.' },
+                '401':
+                  { 'description': 'Authentification requise ou invalide.' },
+                '404': { 'description': 'Semaine non trouvée.' },
+                '422':
+                  {
+                    'description': 'Validation Error',
+                    'content':
+                      {
+                        'application/json':
+                          {
+                            'schema':
+                              {
+                                '$ref': '#/components/schemas/HTTPValidationError'
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      },
+      '/api/conversations/by_lang/{lang_code}':
+        {
+          'get':
+            {
+              'tags': ['Conversations'],
+              'summary': 'Recherche par code langue',
+              'description': "Retourne toutes les conversations d'une langue donnée (ISO 639-2)",
+              'operationId': 'get_conversations_by_lang_api_conversations_by_lang__lang_code__get',
+              'parameters':
+                [
+                  {
+                    'name': 'lang_code',
+                    'in': 'path',
+                    'required': true,
+                    'schema':
+                      {
+                        'type': 'string',
+                        'minLength': 3,
+                        'maxLength': 3,
+                        'description': 'Code ISO 639-2',
+                        'title': 'Lang Code'
+                      },
+                    'description': 'Code ISO 639-2'
+                  },
+                  {
+                    'name': 'limit',
+                    'in': 'query',
+                    'required': false,
+                    'schema':
+                      {
+                        'type': 'integer',
+                        'maximum': 500,
+                        'minimum': 1,
+                        'description': 'Nombre max de résultats',
+                        'default': 100,
+                        'title': 'Limit'
+                      },
+                    'description': 'Nombre max de résultats'
+                  }
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Liste des conversations',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'array',
+                                  'items':
+                                    {
+                                      '$ref': '#/components/schemas/ConversationResponse'
+                                    },
+                                  'title': 'Response Get Conversations By Lang Api Conversations By Lang  Lang Code  Get'
+                                }
+                            }
+                        }
+                    },
+                  '500': { 'description': 'Erreur serveur' },
+                  '422':
+                    {
+                      'description': 'Validation Error',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  '$ref': '#/components/schemas/HTTPValidationError'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+      '/':
+        {
+          'get':
+            {
+              'tags': ['Root'],
+              'summary': 'Read Root',
+              'description': "Point d'entrée de l'API",
+              'operationId': 'read_root__get',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Successful Response',
+                      'content': { 'application/json': { 'schema': {} } }
+                    }
+                }
+            }
+        },
+      '/health':
+        {
+          'get':
+            {
+              'tags': ['Health'],
+              'summary': 'Health Check',
+              'description': "Vérification de l'état de l'API",
+              'operationId': 'health_check_health_get',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Successful Response',
+                      'content': { 'application/json': { 'schema': {} } }
+                    }
+                }
+            }
+        }
+    }
+}

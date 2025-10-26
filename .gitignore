@@ -65,8 +65,13 @@ instance/
 
 # Configs locales (Flask, Django, etc.)
 *.sqlite3
+*.sqlite
 local_settings.py
 db.sqlite3
 media/
 staticfiles/
 db/
+.openmeteo_cache.sqlite
+
+#Ne pas ignorer le dossier db
+!/src/db
