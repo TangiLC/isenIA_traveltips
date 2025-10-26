@@ -495,7 +495,7 @@ geoname_id,name_en,latitude,longitude,pop,country_3166a2,is_capital
 288967,Seeb,23.67027,58.18911,470878,om,False
 288764,Bawshar,23.57769,58.39982,383257,om,False
 287830,‘Ibrī,23.22573,56.51572,163473,om,False
-3703443,Panamá,8.9936,-79.51973,408168,pa,False
+3703443,Panamá City,8.9936,-79.51973,408168,pa,True
 3701329,San Miguelito,9.05032,-79.47068,321501,pa,False
 3708306,Juan Díaz,9.04059,-79.44083,100636,pa,False
 3711668,David,8.42729,-82.43085,81957,pa,False

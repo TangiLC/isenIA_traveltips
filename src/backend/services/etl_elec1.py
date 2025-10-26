@@ -202,7 +202,7 @@ class PlugTypesETL:
 
 def main():
     etl = PlugTypesETL()
-    etl.run()
+    return etl.run()
 
 
 if __name__ == "__main__":

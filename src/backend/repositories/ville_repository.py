@@ -118,9 +118,15 @@ class VilleRepository:
         if not villes_data:
             return 0
         query = """
-            INSERT IGNORE INTO Villes
+            INSERT INTO Villes
             (geoname_id, name_en, latitude, longitude, country_3166a2, is_capital)
             VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                name_en = VALUES(name_en),
+                latitude = VALUES(latitude),
+                longitude = VALUES(longitude),
+                country_3166a2 = VALUES(country_3166a2),
+                is_capital = VALUES(is_capital)
         """
         values = [
             (

@@ -388,21 +388,25 @@ class MeteoETL:
 
 
 # ======================= ENTRÉE SCRIPT =======================
-if __name__ == "__main__":
-    # Exemple d'exécution batch (villes via CSV)
+def main():
+    """Fonction principale pour exécuter l'ETL météo"""
     etl = MeteoETL(
         start_date="2024-01-01",
         end_date="2024-12-31",
         timezone="Europe/Paris",
-        batch_size=40,  # 30 villes par batch
-        api_delay=0.35,  # 300ms entre appels
+        batch_size=40,
+        api_delay=0.35,
     )
 
     # Extract
-    etl.extract_from_csv(skip_existing=True)  # Ignore les villes déjà en base
-
+    etl.extract_from_csv(skip_existing=True)
     # Transform + Load (avec batching automatique)
     daily_df, weekly_df = etl.run()
-
     # Résumé
     etl.print_summary()
+
+    return daily_df, weekly_df
+
+
+if __name__ == "__main__":
+    main()

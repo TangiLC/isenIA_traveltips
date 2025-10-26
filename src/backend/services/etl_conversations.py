@@ -15,6 +15,7 @@ class ConversationETL:
         self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
         self.source_path = self.base_dir / "raw_sources" / "RPB Main Phrases.csv"
         self.output_path = self.base_dir / "src" / "db" / "conversation.csv"
+        # self.csv_url = "https://docs.google.com/spreadsheets/d/1hVa7vtHCc7WGkf0idxU0j5YWX0eX0jzavMR5GncG-nU"
 
     def extract(self):
         """Extraction du fichier CSV vers DataFrame
@@ -201,7 +202,6 @@ class ConversationETL:
 
 
 def main():
-    """Fonction principale pour exécuter l'ETL"""
     etl = ConversationETL()
     return etl.run()
 

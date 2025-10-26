@@ -287,7 +287,6 @@ class LanguageETL:
 
 
 def main():
-    """Fonction principale pour exécuter l'ETL"""
     etl = LanguageETL()
     return etl.run()
 

@@ -67,6 +67,35 @@ with st.sidebar:
         default_value="",
     )
 
+    # Si recherche par nom
+    if search_term and len(search_term) >= 4:
+        st.subheader(f"Résultats pour : {search_term}")
+
+        with st.spinner("Recherche en cours..."):
+            results = api_client.search_countries_by_name(search_term)
+
+            if results:
+                st.write(f"**{len(results)} pays trouvé(s)**")
+
+                for country in results:
+                    with st.expander(
+                        f"{country.get('name_fr', country.get('name_en', 'N/A'))} ({country.get('iso3166a2', 'N/A')})"
+                    ):
+                        # col1, col2, col3 = st.columns(3)
+
+                        # with col1:
+                        st.write(f"**Code ISO:** {country.get('iso3166a2', 'N/A')}")
+                        # with col2:
+                        st.write(f"**Nom anglais:** {country.get('name_en', 'N/A')}")
+                        # with col3:
+                        if st.button(
+                            "Voir détails", key=f"view_{country.get('iso3166a2')}"
+                        ):
+                            st.query_params["alpha2"] = country.get("iso3166a2")
+                            st.rerun()
+            else:
+                st.info("Aucun pays trouvé")
+
 # En-tête
 st.title(f"{PAGES_CONFIG['pays']['icon']} {PAGES_CONFIG['pays']['title']}")
 st.markdown("---")
@@ -82,34 +111,6 @@ elif st.session_state.previous_country != alpha2:
     st.session_state.active_tab = "🗺️ Carte"
     st.session_state.previous_country = alpha2
 
-# Si recherche par nom
-if search_term and len(search_term) >= 4:
-    st.subheader(f"Résultats pour : {search_term}")
-
-    with st.spinner("Recherche en cours..."):
-        results = api_client.search_countries_by_name(search_term)
-
-        if results:
-            st.write(f"**{len(results)} pays trouvé(s)**")
-
-            for country in results:
-                with st.expander(
-                    f"{country.get('name_fr', country.get('name_en', 'N/A'))} ({country.get('iso3166a2', 'N/A')})"
-                ):
-                    col1, col2, col3 = st.columns(3)
-
-                    with col1:
-                        st.write(f"**Code ISO:** {country.get('iso3166a2', 'N/A')}")
-                    with col2:
-                        st.write(f"**Nom anglais:** {country.get('name_en', 'N/A')}")
-                    with col3:
-                        if st.button(
-                            "Voir détails", key=f"view_{country.get('iso3166a2')}"
-                        ):
-                            st.query_params["alpha2"] = country.get("iso3166a2")
-                            st.rerun()
-        else:
-            st.info("Aucun pays trouvé")
 
 # Affichage du pays sélectionné
 st.subheader(f"Détails : {alpha2}")

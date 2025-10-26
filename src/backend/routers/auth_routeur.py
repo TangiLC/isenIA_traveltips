@@ -6,14 +6,14 @@ from security.security import Security
 from models.auth import UserIn, UserPatch, UserOut, TokenResponse, LoginIn
 from repositories.auth_repository import AuthRepository
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 
 @router.get(
     "/test_token",
     response_model=TokenResponse,
     summary="Générer un token JWT de test",
-    description="Génère un token JWT basique sans authentification",
+    description="Génère un token JWT basique sans authentification -Mode dev MVP !!!-",
     responses={
         200: {"description": "Token généré", "model": TokenResponse},
         403: {"description": "Accès refusé"},

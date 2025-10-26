@@ -42,7 +42,7 @@ class MonoRepoLauncher:
         return p.wait()
 
     def stop(self, *_):
-        print("\n🛑 Arrêt des serveurs...")
+        print("Arrêt des serveurs...")
         for p in self.processes:
             if p.poll() is None:
                 p.terminate()
@@ -53,13 +53,13 @@ class MonoRepoLauncher:
             except subprocess.TimeoutExpired:
                 p.kill()
 
-        print("✅ Tous les serveurs sont arrêtés")
+        print("Tous les serveurs sont arrêtés")
 
     def start(self):
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGTERM, self.stop)
 
-        print("🚀 Démarrage des serveurs...")
+        print("Démarrage des serveurs...")
         print(f"   - Backend FastAPI: {self.targets[0]['path']}")
         print(f"   - Frontend Streamlit: {self.targets[1]['path']}")
 

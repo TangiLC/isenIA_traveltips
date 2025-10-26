@@ -358,7 +358,6 @@ class CountryETL:
 
 
 def main():
-    """Fonction principale pour exécuter l'ETL"""
     etl = CountryETL()
     return etl.run()
 

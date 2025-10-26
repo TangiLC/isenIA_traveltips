@@ -270,7 +270,6 @@ class CurrencyETL:
 
 
 def main():
-    """Fonction principale pour exécuter l'ETL"""
     etl = CurrencyETL()
     return etl.run()
 

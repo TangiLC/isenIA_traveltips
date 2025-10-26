@@ -111,7 +111,6 @@ class ETLVille:
             except Exception as e:
                 print(f" Error {code.upper()}: {e}")
                 capitals_dict[code.lower()] = []
-        print(capitals_dict)
         return capitals_dict
 
     def extract(self) -> pd.DataFrame:
@@ -137,6 +136,7 @@ class ETLVille:
         print(f"{len(df)} lignes extraites")
 
         df_countries = pd.read_csv(self.countries_path, dtype=str)
+        print(df_countries)
 
         return {"villes": df, "pays": df_countries}
 
@@ -161,6 +161,7 @@ class ETLVille:
         valid_alpha2 = df_countries["alpha2"].dropna().str.strip().str.lower().tolist()
         df["country_3166a2"] = df["country_3166a2"].fillna("").str.strip().str.lower()
         df = df[df["country_3166a2"].isin(valid_alpha2)]
+        print("*****df*****", df)
 
         # Nettoyer les valeurs textuelles
         df["name_en"] = df["name_en"].fillna("").str.strip()
@@ -208,7 +209,7 @@ class ETLVille:
 
         df = (
             df.groupby("country_3166a2", group_keys=False)
-            .apply(select_cities_per_country, include_groups=False)
+            .apply(select_cities_per_country)
             .reset_index(drop=True)
         )
 

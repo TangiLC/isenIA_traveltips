@@ -231,9 +231,9 @@ INSERT IGNORE INTO Credits (target_element,source_element,source_type, source_ur
     ('Elec_pays','Normes électriques (par pays)','SCRAP','https://www.worldstandards.eu/electricity/plug-voltage-by-country/'),
     ('Ville_geo','Villes (nom, geonameid, lat-long...)','TXT','https://download.geonames.org/export/dump/cities15000.zip'),
     ('Ville_capital','Capitales (nom)','API','https://restcountries.com/v3.1/alpha/{code}?fields=capital'),
-    ('Ville_meteo','Météo hebdomadaire par ville (geonameid)','API','https://historical-forecast-api.open-meteo.com/v1/forecast'),
-    ('Conversations','Phrases types en langue locale','CSV','https://docs.google.com/spreadsheets/d/1hVa7vtHCc7WGkf0idxU0j5YWX0eX0jzavMR5GncG-nU');
-
+    ('Ville_meteo','Météo hebdomadaire par ville (geonameid)','API','https://archive-api.open-meteo.com/v1/archive'),
+    ('Conversations','Phrases types en langue locale','CSV','https://docs.google.com/spreadsheets/d/1hVa7vtHCc7WGkf0idxU0j5YWX0eX0jzavMR5GncG-nU'),
+    ('Langue_famille','Familles linguistiques','MySQL','Base locale (dérivée ISO 639)');
     
     
 

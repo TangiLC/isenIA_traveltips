@@ -118,7 +118,7 @@ class CountryPlugsETL:
 
 def main():
     etl = CountryPlugsETL()
-    etl.run()
+    return etl.run()
 
 
 if __name__ == "__main__":

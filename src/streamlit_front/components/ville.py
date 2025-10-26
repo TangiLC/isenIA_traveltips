@@ -39,15 +39,27 @@ def render_city_map(lat: float, lon: float, zoom: int = 9, height: int = 220):
 
 
 def render_meteo_timeline(meteo_data):
+    """
+    Affiche un graphique combiné des températures et précipitations sur l'année.
+
+    Args:
+        meteo_data: Liste de dictionnaires contenant les données météo hebdomadaires
+                   avec les clés: week_start_date, week_end_date, temperature_max_avg,
+                   temperature_min_avg, precipitation_sum
+    """
+    # Vérifier si les données existent
     if not meteo_data:
         st.warning("Aucune donnée météo disponible")
         return
 
+    # Créer le DataFrame
     df = pd.DataFrame(meteo_data)
 
+    # Convertir les dates
     for c in ("week_start_date", "week_end_date"):
         df[c] = pd.to_datetime(df[c], errors="coerce")
 
+    # Filtrer les lignes avec au moins une valeur non nulle
     df = df[
         df[["temperature_max_avg", "temperature_min_avg", "precipitation_sum"]]
         .notna()
@@ -58,7 +70,7 @@ def render_meteo_timeline(meteo_data):
         st.warning("Données météo présentes mais toutes nulles")
         return
 
-    # Calculer la date du milieu de la semaine pour l'affichage
+    # Calculer la date du milieu de la semaine pour un affichage plus précis
     df["date"] = (
         df["week_start_date"] + (df["week_end_date"] - df["week_start_date"]) / 2
     )
@@ -70,9 +82,9 @@ def render_meteo_timeline(meteo_data):
         + df["week_end_date"].dt.strftime("%d/%m/%Y")
     )
 
-    # Préparer les données pour les températures
+    # Préparer les données pour les températures (pivot long pour Altair)
     temp_df = df.melt(
-        id_vars=["date", "semaine", "precipitation_sum"],
+        id_vars=["date", "semaine", "precipitation_sum", "week_start_date"],
         value_vars=["temperature_max_avg", "temperature_min_avg"],
         var_name="type",
         value_name="value",
@@ -83,7 +95,7 @@ def render_meteo_timeline(meteo_data):
         {"temperature_max_avg": "Temp. Max", "temperature_min_avg": "Temp. Min"}
     )
 
-    # Histogramme précipitations (barres) avec tooltip
+    # ===== LAYER 1: Histogramme des précipitations (barres bleues) =====
     bars = (
         alt.Chart(df)
         .mark_bar(opacity=0.7, color="#9ecae1")
@@ -93,7 +105,11 @@ def render_meteo_timeline(meteo_data):
                 title="Météo annuelle",
                 axis=alt.Axis(format="%b %Y"),
             ),
-            y=alt.Y("precipitation_sum:Q", title="Précipitations (mm)"),
+            y=alt.Y(
+                "precipitation_sum:Q",
+                title="Précipitations (mm)",
+                axis=alt.Axis(orient="left"),
+            ),
             tooltip=[
                 alt.Tooltip("semaine:N", title="Semaine"),
                 alt.Tooltip(
@@ -103,22 +119,23 @@ def render_meteo_timeline(meteo_data):
         )
     )
 
-    # Courbes températures (lignes) avec tooltip
+    # ===== LAYER 2: Courbes des températures (lignes) =====
     lines = (
         alt.Chart(temp_df)
-        .mark_line(point=True, strokeWidth=2.5)
+        .mark_line(point=False, strokeWidth=2.5)
         .encode(
-            x=alt.X("date:T"),
+            x=alt.X("date:T", title=None),
             y=alt.Y("value:Q", title="Température (°C)", axis=alt.Axis(orient="right")),
             color=alt.Color(
                 "type:N",
-                title="Temperature",
+                title="Température",
                 scale=alt.Scale(
                     domain=["temperature_max_avg", "temperature_min_avg"],
                     range=["#d62728", "#1f77b4"],
                 ),
                 legend=alt.Legend(
-                    labelExpr="datum.value === 'temperature_max_avg' ? 'Max' : 'Min'"
+                    labelExpr="datum.value === 'temperature_max_avg' ? 'Max' : 'Min'",
+                    orient="top-right",
                 ),
             ),
             tooltip=[
@@ -132,13 +149,13 @@ def render_meteo_timeline(meteo_data):
         )
     )
 
-    # Points pour améliorer l'interactivité
+    # ===== LAYER 3: Points pour améliorer l'interactivité =====
     points = (
         alt.Chart(temp_df)
-        .mark_circle(size=80)
+        .mark_circle(size=80, opacity=0.8)
         .encode(
-            x=alt.X("date:T"),
-            y=alt.Y("value:Q"),
+            x=alt.X("date:T", title=None),
+            y=alt.Y("value:Q", axis=None),
             color=alt.Color(
                 "type:N",
                 scale=alt.Scale(
@@ -158,9 +175,10 @@ def render_meteo_timeline(meteo_data):
         )
     )
 
+    # ===== Assemblage final =====
     chart = (
         alt.layer(bars, lines, points)
-        .resolve_scale(y="independent")
+        .resolve_scale(y="independent")  # Deux axes Y indépendants
         .properties(height=350, title="Évolution météo annuelle")
         .configure_view(strokeWidth=0)
     )
@@ -206,7 +224,7 @@ def ville_component(country_data: Dict):
                     st.write(f"**Coordonnées:** {lat:.4f}, {lon:.4f}")
 
                 if geoname_id:
-                    c1, c2 = st.columns(2)
+                    c1, c2, c3 = st.columns(3)
                     with c1:
                         if st.button("⛅ Voir météo", key=f"open_{geoname_id}"):
                             st.session_state.open_meteo.add(geoname_id)
@@ -215,6 +233,8 @@ def ville_component(country_data: Dict):
                         if st.button("Fermer", key=f"close_{geoname_id}"):
                             st.session_state.open_meteo.discard(geoname_id)
                             st.rerun()
+                    with c3:
+                        st.write("Weather data by **Open-Meteo.com**")
 
             with col2:
                 if geoname_id and geoname_id in st.session_state.open_meteo:
