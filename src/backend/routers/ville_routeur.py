@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from schemas.ville_dto import VilleCreate, VilleUpdate, VilleResponse
-from repositories.ville_repository import VilleRepository
+from services.ville_service import VilleService
 from security.security import Security
 
 router = APIRouter(prefix="/api/villes", tags=["Villes"])
@@ -20,10 +20,10 @@ router = APIRouter(prefix="/api/villes", tags=["Villes"])
     },
 )
 def get_ville(geoname_id: int):
-    ville = VilleRepository.get_by_geoname_id(geoname_id)
-    if ville is None:
-        raise HTTPException(status_code=404, detail="Ville non trouvée")
-    return ville
+    try:
+        return VilleService.get_by_geoname_id(geoname_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get(
@@ -39,10 +39,10 @@ def get_ville(geoname_id: int):
     },
 )
 def get_villes_by_name(name_en: str):
-    villes = VilleRepository.get_by_name(name_en)
-    if not villes:
-        raise HTTPException(status_code=404, detail="Aucune ville trouvée avec ce nom")
-    return villes
+    try:
+        return VilleService.get_by_name(name_en)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get(
@@ -58,15 +58,12 @@ def get_villes_by_name(name_en: str):
     },
 )
 def get_villes_by_country(country_3166a2: str):
-    if len(country_3166a2) != 2:
-        raise HTTPException(
-            status_code=400, detail="Le code pays doit contenir exactement 2 caractères"
-        )
-
-    villes = VilleRepository.get_by_country(country_3166a2)
-    if not villes:
-        raise HTTPException(status_code=404, detail="Aucune ville trouvée pour ce pays")
-    return villes
+    try:
+        return VilleService.get_by_country(country_3166a2)
+    except ValueError as e:
+        # Déterminer le status code selon le message
+        status_code = 400 if "2 caractères" in str(e) else 404
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 
 @router.get(
@@ -81,8 +78,7 @@ def get_villes_by_country(country_3166a2: str):
     },
 )
 def get_villes(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000)):
-    villes = VilleRepository.get_all(skip, limit)
-    return villes
+    return VilleService.get_all(skip, limit)
 
 
 @router.post(
@@ -99,14 +95,10 @@ def get_villes(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000
     },
 )
 def create_ville(ville: VilleCreate, _=Depends(Security.secured_route)):
-    existing = VilleRepository.get_by_geoname_id(ville.geoname_id)
-    if existing:
-        raise HTTPException(
-            status_code=400, detail="Une ville avec ce geoname_id existe déjà"
-        )
-
-    created = VilleRepository.create(ville.model_dump())
-    return created
+    try:
+        return VilleService.create(ville.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.put(
@@ -124,12 +116,10 @@ def create_ville(ville: VilleCreate, _=Depends(Security.secured_route)):
 def update_ville(
     geoname_id: int, ville: VilleUpdate, _=Depends(Security.secured_route)
 ):
-    update_data = ville.model_dump(exclude_unset=True)
-    updated = VilleRepository.update(geoname_id, update_data)
-
-    if updated is None:
-        raise HTTPException(status_code=404, detail="Ville non trouvée")
-    return updated
+    try:
+        return VilleService.update(geoname_id, ville.model_dump(exclude_unset=True))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete(
@@ -145,7 +135,6 @@ def update_ville(
     },
 )
 def delete_ville(geoname_id: int, _=Depends(Security.secured_route)):
-    success = VilleRepository.delete(geoname_id)
-    if not success:
+    if not VilleService.delete(geoname_id):
         raise HTTPException(status_code=404, detail="Ville non trouvée")
     return f"Ville '{geoname_id}' supprimée avec succès"

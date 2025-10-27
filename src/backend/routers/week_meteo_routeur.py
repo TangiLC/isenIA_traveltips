@@ -7,8 +7,8 @@ from schemas.week_meteo_dto import (
     WeekMeteoResponse,
     WeekMeteoBulkCreate,
 )
-from repositories.week_meteo_repository import WeekMeteoRepository
 from models.week_meteo import WeekMeteo
+from services.meteo_service import MeteoService
 from security.security import Security
 
 router = APIRouter(
@@ -46,10 +46,10 @@ def get_weeks_for_city(
     """
     Récupère les semaines météo pour `geoname_id` dans la plage optionnelle [`start_date`, `end_date`].
     """
-    data = WeekMeteoRepository.get_range(geoname_id, start_date, end_date)
-    if not data:
-        raise HTTPException(status_code=404, detail="Aucune donnée hebdomadaire")
-    return data
+    try:
+        return MeteoService.get_weeks_for_city(geoname_id, start_date, end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get(
@@ -78,7 +78,7 @@ def list_all(
     """
     Retourne une page des semaines météo disponibles.
     """
-    return WeekMeteoRepository.get_all(skip, limit)
+    return MeteoService.get_all(skip, limit)
 
 
 @router.post(
@@ -106,8 +106,7 @@ def create_or_update_week(
     """
     Upsert d'une semaine météo à partir du schéma `WeekMeteoCreate`.
     """
-    created = WeekMeteoRepository.upsert(WeekMeteo(**payload.model_dump()))
-    return created
+    return MeteoService.create_or_update(WeekMeteo(**payload.model_dump()))
 
 
 @router.post(
@@ -135,7 +134,7 @@ def bulk_create_or_update(
     Upsert en masse de semaines météo. Retourne `{"upserted_rows": <int>}`.
     """
     items = [WeekMeteo(**p.model_dump()) for p in payload.items]
-    inserted = WeekMeteoRepository.bulk_upsert(items)
+    inserted = MeteoService.bulk_create_or_update(items)
     return {"upserted_rows": inserted}
 
 
@@ -172,14 +171,12 @@ def update_one(
     """
     Met à jour une semaine existante en conservant les valeurs non spécifiées.
     """
-    existing = WeekMeteoRepository.get_by_pk(geoname_id, week_start_date)
-    if existing is None:
-        raise HTTPException(status_code=404, detail="Semaine non trouvée")
-    data = existing.model_dump()
-    for k, v in changes.model_dump(exclude_unset=True).items():
-        data[k] = v
-    updated = WeekMeteoRepository.upsert(WeekMeteo(**data))
-    return updated
+    try:
+        return MeteoService.update_partial(
+            geoname_id, week_start_date, changes.model_dump(exclude_unset=True)
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete(
@@ -201,6 +198,5 @@ def delete_one(
     """
     Supprime définitivement la semaine ciblée si elle existe.
     """
-    ok = WeekMeteoRepository.delete(geoname_id, week_start_date)
-    if not ok:
+    if not MeteoService.delete(geoname_id, week_start_date):
         raise HTTPException(status_code=404, detail="Semaine non trouvée")

@@ -7,7 +7,7 @@ import sys
 import requests
 import time
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
 from repositories.ville_repository import VilleRepository
 from utils.utils import ETLUtils
@@ -17,7 +17,7 @@ class ETLVille:
     """ETL pour charger les villes depuis cities15000.txt vers la BDD"""
 
     def __init__(self):
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[5]
         self.input_path = self.base_dir / "raw_sources" / "cities15000.txt"
         self.countries_path = self.base_dir / "raw_sources" / "countries_en.csv"
         self.output_path = self.base_dir / "src" / "db" / "villes.csv"

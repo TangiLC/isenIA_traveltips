@@ -4,7 +4,7 @@ import yaml
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
 from repositories.country_repository import CountryRepository
 from utils.utils import ETLUtils
@@ -15,7 +15,7 @@ class CountryETL:
 
     def __init__(self):
         """Initialisation des chemins de fichiers"""
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[5]
         self.raw_dir = self.base_dir / "raw_sources"
         self.csv_path = self.raw_dir / "countries_en.csv"
         self.json_path = self.raw_dir / "countries_stefangabos.json"

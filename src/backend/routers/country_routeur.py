@@ -1,8 +1,10 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from schemas.country_dto import CountryCreate, CountryUpdate, CountryResponse
-from repositories.country_repository import CountryRepository
-from connexion.mysql_connect import MySQLConnection
+from services.country_service import CountryService
+
+# from repositories.country_repository import CountryRepository
+# from connexion.mysql_connect import MySQLConnection
 from security.security import Security
 
 router = APIRouter(prefix="/api/countries", tags=["Countries"])
@@ -25,22 +27,15 @@ def get_country_by_id(alpha2: str):
     Récupère un pays par son code ISO alpha-2 (ex: 'fr', 'us', 'jp')
     Retourne toutes les informations enrichies : langues complètes, monnaies, électricité, frontières, villes principales
     """
-    alpha2 = alpha2.lower().strip()
-
-    if len(alpha2) != 2:
-        raise HTTPException(
-            status_code=400,
-            detail="Le code pays doit contenir exactement 2 caractères (ISO 3166-1 alpha-2)",
-        )
-
-    # Utiliser la version classique (compatible toutes versions MySQL)
-    # Pour version optimisée : get_by_alpha2_optimized()
-    country = CountryRepository.get_by_alpha2(alpha2)
-
-    if country is None:
-        raise HTTPException(status_code=404, detail=f"Pays '{alpha2}' non trouvé")
-
-    return country
+    try:
+        return CountryService.get_by_alpha2(alpha2)
+    except ValueError as e:
+        # Déterminer status code selon le message
+        if "2 caractères" in str(e):
+            status_code = 400
+        else:
+            status_code = 404
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 
 @router.get(
@@ -62,19 +57,15 @@ def get_countries_by_name(name: str):
     Recherche des pays par nom (tolérant aux accents et à la casse)
     Exemples: 'france', 'côte ivoire', 'japan', 'allemagne'
     """
-    if not name or len(name.strip()) < 4:
-        raise HTTPException(
-            status_code=422, detail="Le nom doit contenir au moins 4 caractères"
-        )
-
-    countries = CountryRepository.get_by_name(name)
-
-    if not countries:
-        raise HTTPException(
-            status_code=404, detail=f"Aucun pays trouvé avec le nom '{name}'"
-        )
-
-    return countries
+    try:
+        return CountryService.get_by_name(name)
+    except ValueError as e:
+        # Déterminer status code selon le message
+        if "4 caractères" in str(e):
+            status_code = 422
+        else:
+            status_code = 404
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 
 @router.get(
@@ -93,8 +84,7 @@ def get_countries(skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=5
     Liste tous les pays avec pagination
     Note: Pour avoir les relations complètes, utiliser /by_id/{alpha2}
     """
-    countries = CountryRepository.get_all(skip, limit)
-    return countries
+    return CountryService.get_all(skip, limit)
 
 
 @router.post(
@@ -115,49 +105,12 @@ def create_country(country: CountryCreate, _=Depends(Security.secured_route)):
     Crée un nouveau pays avec ses relations
     Nécessite une authentification JWT (admin)
     """
-    # Normaliser le code ISO
-    iso2 = country.iso3166a2.lower().strip()
-    iso3 = country.iso3166a3.upper().strip()
-
-    # Vérifier si le pays existe déjà
-    existing = CountryRepository.get_by_alpha2(iso2)
-    if existing:
-        raise HTTPException(
-            status_code=400, detail=f"Un pays avec le code '{iso2}' existe déjà"
-        )
-
-    # Insérer le pays
-    CountryRepository.upsert_pays(
-        iso2=iso2,
-        iso3=iso3,
-        name_en=country.name_en,
-        name_fr=country.name_fr,
-        name_local=country.name_local,
-        lat=country.lat,
-        lng=country.lng,
-    )
-
-    # Insérer les relations
-    if country.langues:
-        CountryRepository.insert_langues(iso2, country.langues)
-
-    if country.currencies:
-        CountryRepository.insert_monnaies(iso2, country.currencies)
-
-    if country.borders:
-        CountryRepository.insert_borders(iso2, country.borders)
-
-    if country.electricity_types:
-        CountryRepository.insert_electricite(
-            iso2,
-            country.electricity_types,
-            country.voltage or "",
-            country.frequency or "",
-        )
-
-    # Récupérer et retourner le pays créé
-    created = CountryRepository.get_by_alpha2(iso2)
-    return created
+    try:
+        return CountryService.create(country.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
 
 @router.put(
@@ -181,68 +134,17 @@ def update_country(
     Les relations sont remplacées si fournies (pas de merge)
     Nécessite une authentification JWT (admin)
     """
-    iso2 = alpha2.lower().strip()
-
-    if len(iso2) != 2:
-        raise HTTPException(
-            status_code=400, detail="Le code pays doit contenir exactement 2 caractères"
-        )
-
-    # Vérifier que le pays existe
-    existing = CountryRepository.get_by_alpha2(iso2)
-    if not existing:
-        raise HTTPException(status_code=404, detail=f"Pays '{iso2}' non trouvé")
-
-    # Extraire les champs à mettre à jour (exclude_unset pour ne garder que les champs fournis)
-    update_data = country.model_dump(exclude_unset=True)
-
-    # Mettre à jour les données de base
-    base_fields = {
-        k: v
-        for k, v in update_data.items()
-        if k in ["iso3166a3", "name_en", "name_fr", "name_local", "lat", "lng"]
-    }
-
-    if base_fields:
-        CountryRepository.update_pays(iso2, base_fields)
-
-    # Mettre à jour les relations (suppression puis réinsertion)
-    if "langues" in update_data:
-        MySQLConnection.execute_update(
-            "DELETE FROM Pays_Langues WHERE country_iso3166a2 = %s", (iso2,)
-        )
-        if update_data["langues"]:
-            CountryRepository.insert_langues(iso2, update_data["langues"])
-
-    if "currencies" in update_data:
-        MySQLConnection.execute_update(
-            "DELETE FROM Pays_Monnaies WHERE country_iso3166a2 = %s", (iso2,)
-        )
-        if update_data["currencies"]:
-            CountryRepository.insert_monnaies(iso2, update_data["currencies"])
-
-    if "borders" in update_data:
-        MySQLConnection.execute_update(
-            "DELETE FROM Pays_Borders WHERE country_iso3166a2 = %s OR border_iso3166a2 = %s",
-            (iso2, iso2),
-        )
-        if update_data["borders"]:
-            CountryRepository.insert_borders(iso2, update_data["borders"])
-
-    if "electricity_types" in update_data:
-        MySQLConnection.execute_update(
-            "DELETE FROM Pays_Electricite WHERE country_iso3166a2 = %s", (iso2,)
-        )
-        if update_data["electricity_types"]:
-            voltage = update_data.get("voltage", "")
-            frequency = update_data.get("frequency", "")
-            CountryRepository.insert_electricite(
-                iso2, update_data["electricity_types"], voltage, frequency
-            )
-
-    # Récupérer et retourner le pays mis à jour
-    updated = CountryRepository.get_by_alpha2(iso2)
-    return updated
+    try:
+        return CountryService.update(alpha2, country.model_dump(exclude_unset=True))
+    except ValueError as e:
+        # Déterminer status code selon le message
+        if "2 caractères" in str(e):
+            status_code = 400
+        else:
+            status_code = 404
+        raise HTTPException(status_code=status_code, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
 
 @router.delete(
@@ -262,27 +164,21 @@ def delete_country(alpha2: str, _=Depends(Security.secured_route)):
     Supprime un pays et toutes ses relations
     Nécessite une authentification JWT (admin)
     """
-    iso2 = alpha2.lower().strip()
+    try:
+        existing = CountryService.delete(alpha2)
 
-    if len(iso2) != 2:
-        raise HTTPException(
-            status_code=400, detail="Le code pays doit contenir exactement 2 caractères"
-        )
-
-    # Vérifier que le pays existe
-    existing = CountryRepository.get_by_alpha2(iso2)
-    if not existing:
-        raise HTTPException(status_code=404, detail=f"Pays '{iso2}' non trouvé")
-
-    # Supprimer le pays (cascade sur les relations via ON DELETE CASCADE)
-    success = CountryRepository.delete_pays(iso2)
-
-    if not success:
-        raise HTTPException(
-            status_code=500, detail="Erreur lors de la suppression du pays"
-        )
-
-    return {
-        "message": f"Pays '{iso2}' supprimé avec succès",
-        "deleted_country": existing["name_en"],
-    }
+        return {
+            "message": f"Pays '{alpha2}' supprimé avec succès",
+            "deleted_country": existing["name_en"],
+        }
+    except ValueError as e:
+        # Déterminer status code selon le message
+        if "2 caractères" in str(e):
+            status_code = 400
+        elif "non trouvé" in str(e):
+            status_code = 404
+        else:
+            status_code = 500
+        raise HTTPException(status_code=status_code, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")

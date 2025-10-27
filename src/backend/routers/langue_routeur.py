@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List
-from connexion.mysql_connect import MySQLConnection
-from repositories.langue_repository import LangueRepository
+from services.langue_service import LangueService
 from schemas.langue_dto import (
     LangueResponse,
     LangueCreateRequest,
@@ -30,26 +29,18 @@ def get_langue_by_code_iso(
 ):
     """Recherche une langue par son code ISO 639-2"""
     try:
-        MySQLConnection.connect()
-        result = LangueRepository.find_by_iso639_2(code)
-
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Langue avec le code '{code}' introuvable",
-            )
-
+        result = LangueService.find_by_iso639_2(code)
         return map_to_response(result)
-
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.get(
@@ -68,17 +59,13 @@ def get_langues_by_name(
 ):
     """Recherche des langues par nom (name_en, name_fr ou name_local)"""
     try:
-        MySQLConnection.connect()
-        results = LangueRepository.find_by_name(name)
+        results = LangueService.find_by_name(name)
         return [map_to_response(row) for row in results]
-
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.get(
@@ -100,17 +87,13 @@ def get_langues_by_famille(
 ):
     """Recherche des langues par famille linguistique"""
     try:
-        MySQLConnection.connect()
-        results = LangueRepository.find_by_famille(famille)
+        results = LangueService.find_by_famille(famille)
         return [map_to_response(row) for row in results]
-
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.put(
@@ -129,31 +112,17 @@ def create_or_replace_langue(
 ):
     """Crée ou remplace une langue"""
     try:
-        MySQLConnection.connect()
-
-        rows_affected = LangueRepository.create_or_replace(
-            iso639_2=langue.iso639_2,
-            name_en=langue.name_en,
-            name_fr=langue.name_fr,
-            name_local=langue.name_local,
-            branche_en=langue.branche_en,
-        )
-
-        MySQLConnection.commit()
+        rows_affected = LangueService.create_or_replace(langue.model_dump())
 
         return {
             "message": f"Langue '{langue.iso639_2}' créée/remplacée avec succès",
             "rows_affected": rows_affected,
         }
-
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la création: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.patch(
@@ -172,43 +141,24 @@ def update_langue_partial(
 ):
     """Mise à jour partielle d'une langue"""
     try:
-        MySQLConnection.connect()
-
-        # Vérifier que la langue existe
-        existing = LangueRepository.find_by_iso639_2(iso639_2)
-        if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Langue avec le code '{iso639_2}' introuvable",
-            )
-
-        # Filtrer les champs non-None
-        updates_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
-
-        if not updates_dict:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Aucun champ à mettre à jour",
-            )
-
-        rows_affected = LangueRepository.update_partial(iso639_2, updates_dict)
-        MySQLConnection.commit()
+        rows_affected = LangueService.update_partial(iso639_2, updates.model_dump())
 
         return {
             "message": f"Langue '{iso639_2}' mise à jour avec succès",
             "rows_affected": rows_affected,
         }
-
-    except HTTPException:
-        raise
+    except ValueError as e:
+        # Déterminer le status code selon le message
+        if "introuvable" in str(e):
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
+        raise HTTPException(status_code=status_code, detail=str(e))
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la mise à jour: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.delete(
@@ -226,31 +176,19 @@ def update_langue_partial(
 def delete_langue(iso639_2: str, _=Depends(Security.secured_route)):
     """Supprime une langue par son code ISO 639-2"""
     try:
-        MySQLConnection.connect()
-
-        # Vérifier que la langue existe
-        existing = LangueRepository.find_by_iso639_2(iso639_2)
-        if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Langue avec le code '{iso639_2}' introuvable",
-            )
-
-        rows_affected = LangueRepository.delete(iso639_2)
-        MySQLConnection.commit()
+        rows_affected = LangueService.delete(iso639_2)
 
         return {
             "message": f"Langue '{iso639_2}' supprimée avec succès",
             "rows_affected": rows_affected,
         }
-
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()

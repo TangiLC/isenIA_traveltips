@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List
-from connexion.mysql_connect import MySQLConnection
-from repositories.currency_repository import CurrencyRepository
+from services.currency_service import CurrencyService
 from schemas.currency_dto import (
     CurrencyResponse,
     CurrencyCreateRequest,
@@ -28,23 +27,18 @@ def get_currency_by_code_iso(
     code: str = Query(..., min_length=3, max_length=3, description="Code ISO 4217"),
 ):
     try:
-        MySQLConnection.connect()
-        result = CurrencyRepository.find_by_iso4217(code)
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Devise avec le code '{code}' introuvable",
-            )
+        result = CurrencyService.find_by_iso4217(code)
         return map_to_response(result)
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.get(
@@ -61,16 +55,13 @@ def get_currencies_by_name(
     name: str = Query(..., min_length=1, description="Terme de recherche"),
 ):
     try:
-        MySQLConnection.connect()
-        results = CurrencyRepository.find_by_name_or_symbol(name)
+        results = CurrencyService.find_by_name_or_symbol(name)
         return [map_to_response(r) for r in results]
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.put(
@@ -88,25 +79,17 @@ def create_or_replace_currency(
     currency: CurrencyCreateRequest, _=Depends(Security.secured_route)
 ):
     try:
-        MySQLConnection.connect()
-        rows = CurrencyRepository.create_or_replace(
-            iso4217=currency.iso4217,
-            name=currency.name,
-            symbol=currency.symbol,
-        )
-        MySQLConnection.commit()
+        rows = CurrencyService.create_or_replace(currency.model_dump())
+
         return {
             "message": f"Devise '{currency.iso4217}' créée/remplacée avec succès",
             "rows_affected": rows,
         }
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la création: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.patch(
@@ -124,38 +107,24 @@ def update_currency_partial(
     iso4217: str, updates: CurrencyUpdateRequest, _=Depends(Security.secured_route)
 ):
     try:
-        MySQLConnection.connect()
+        rows = CurrencyService.update_partial(iso4217, updates.model_dump())
 
-        existing = CurrencyRepository.find_by_iso4217(iso4217)
-        if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Devise avec le code '{iso4217}' introuvable",
-            )
-
-        updates_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
-        if not updates_dict:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Aucun champ à mettre à jour",
-            )
-
-        rows = CurrencyRepository.update_partial(iso4217, updates_dict)
-        MySQLConnection.commit()
         return {
             "message": f"Devise '{iso4217}' mise à jour avec succès",
             "rows_affected": rows,
         }
-    except HTTPException:
-        raise
+    except ValueError as e:
+        # Déterminer le status code selon le message
+        if "introuvable" in str(e):
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
+        raise HTTPException(status_code=status_code, detail=str(e))
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la mise à jour: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.delete(
@@ -171,28 +140,19 @@ def update_currency_partial(
 )
 def delete_currency(iso4217: str, _=Depends(Security.secured_route)):
     try:
-        MySQLConnection.connect()
+        rows = CurrencyService.delete(iso4217)
 
-        existing = CurrencyRepository.find_by_iso4217(iso4217)
-        if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Devise avec le code '{iso4217}' introuvable",
-            )
-
-        rows = CurrencyRepository.delete(iso4217)
-        MySQLConnection.commit()
         return {
             "message": f"Devise '{iso4217}' supprimée avec succès",
             "rows_affected": rows,
         }
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()

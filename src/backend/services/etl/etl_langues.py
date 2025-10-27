@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
 from connexion.mongo_connect import MongoDBConnection
 from repositories.langue_repository import LangueRepository
@@ -15,7 +15,7 @@ class LanguageETL:
 
     def __init__(self):
         """Initialisation des chemins de fichiers"""
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[5]
         self.iso1_path = self.base_dir / "raw_sources" / "iso_639-1.csv"
         self.iso2_path = self.base_dir / "raw_sources" / "iso_639-2.csv"
         self.output_path = self.base_dir / "src" / "db" / "iso_languages.csv"

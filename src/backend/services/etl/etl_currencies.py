@@ -4,7 +4,8 @@ import time
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, Path(__file__).resolve().parents[2])
+
 from connexion.mysql_connect import MySQLConnection
 from repositories.currency_repository import CurrencyRepository
 from utils.utils import ETLUtils
@@ -17,7 +18,7 @@ class CurrencyETL:
         """Initialisation des chemins de fichiers"""
         # Le fichier Python est dans ./src/backend/services
         # On remonte de 3 niveaux pour atteindre la racine du projet
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[4]
         self.input_path = self.base_dir / "raw_sources" / "countries_en.csv"
         self.output_path = self.base_dir / "src" / "db" / "currencies.csv"
         self.api_base_url = "https://www.apicountries.com/alpha"

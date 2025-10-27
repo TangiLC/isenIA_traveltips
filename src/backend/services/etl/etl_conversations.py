@@ -2,7 +2,7 @@ import pandas as pd
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mongo_connect import MongoDBConnection
 from repositories.conversation_repository import ConversationRepository
 
@@ -12,7 +12,7 @@ class ConversationETL:
 
     def __init__(self):
         """Initialisation des chemins de fichiers"""
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[5]
         self.source_path = self.base_dir / "raw_sources" / "RPB Main Phrases.csv"
         self.output_path = self.base_dir / "src" / "db" / "conversation.csv"
         # self.csv_url = "https://docs.google.com/spreadsheets/d/1hVa7vtHCc7WGkf0idxU0j5YWX0eX0jzavMR5GncG-nU"

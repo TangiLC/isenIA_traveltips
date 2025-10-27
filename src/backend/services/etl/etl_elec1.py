@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
 from repositories.electricity_repository import ElectriciteRepository
 from utils.utils import ETLUtils
@@ -15,7 +15,7 @@ from utils.utils import ETLUtils
 
 class PlugTypesETL:
     def __init__(self):
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[5]
         self.output_path = self.base_dir / "src" / "db" / "plug_types.csv"
         self.assets_dir = self.base_dir / "src" / "static" / "assets" / "elec"
         self.assets_dir.mkdir(parents=True, exist_ok=True)

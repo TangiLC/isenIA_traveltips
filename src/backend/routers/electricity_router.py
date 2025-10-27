@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
-from connexion.mysql_connect import MySQLConnection
-from repositories.electricity_repository import ElectriciteRepository
 from schemas.electricity_dto import (
     ElectriciteResponse,
     ElectriciteCreateRequest,
     ElectriciteUpdateRequest,
     map_to_response,
 )
+from services.electricity_service import ElectricityService
 from security.security import Security
 
 router = APIRouter(prefix="/api/electricite", tags=["Electricite"])
@@ -25,16 +24,13 @@ router = APIRouter(prefix="/api/electricite", tags=["Electricite"])
 )
 def get_all_plug_types():
     try:
-        MySQLConnection.connect()
-        results = ElectriciteRepository.find_all()
+        results = ElectricityService.find_all()
         return [map_to_response(r) for r in results]
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.get(
@@ -50,23 +46,18 @@ def get_all_plug_types():
 )
 def get_plug_type_by_id(plug_type: str):
     try:
-        MySQLConnection.connect()
-        result = ElectriciteRepository.find_by_plug_type(plug_type.upper())
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Type de prise '{plug_type}' introuvable",
-            )
+        result = ElectricityService.find_by_plug_type(plug_type)
         return map_to_response(result)
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.put(
@@ -85,25 +76,17 @@ def create_or_replace_plug_type(
     plug: ElectriciteCreateRequest, _=Depends(Security.secured_route)
 ):
     try:
-        MySQLConnection.connect()
-        rows = ElectriciteRepository.create_or_replace(
-            plug_type=plug.plug_type.upper(),
-            plug_png=plug.plug_png,
-            sock_png=plug.sock_png,
-        )
-        MySQLConnection.commit()
+        rows = ElectricityService.create_or_replace(plug.model_dump())
+
         return {
             "message": f"Type de prise '{plug.plug_type}' créé/remplacé avec succès",
             "rows_affected": rows,
         }
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la création: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.patch(
@@ -122,38 +105,24 @@ def update_plug_type_partial(
     plug_type: str, updates: ElectriciteUpdateRequest, _=Depends(Security.secured_route)
 ):
     try:
-        MySQLConnection.connect()
+        rows = ElectricityService.update_partial(plug_type, updates.model_dump())
 
-        existing = ElectriciteRepository.find_by_plug_type(plug_type.upper())
-        if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Type de prise '{plug_type}' introuvable",
-            )
-
-        updates_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
-        if not updates_dict:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Aucun champ à mettre à jour",
-            )
-
-        rows = ElectriciteRepository.update_partial(plug_type.upper(), updates_dict)
-        MySQLConnection.commit()
         return {
             "message": f"Type de prise '{plug_type}' mis à jour avec succès",
             "rows_affected": rows,
         }
-    except HTTPException:
-        raise
+    except ValueError as e:
+        # Déterminer le status code selon le message
+        if "introuvable" in str(e):
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
+        raise HTTPException(status_code=status_code, detail=str(e))
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la mise à jour: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.delete(
@@ -170,31 +139,22 @@ def update_plug_type_partial(
 )
 def delete_plug_type(plug_type: str, _=Depends(Security.secured_route)):
     try:
-        MySQLConnection.connect()
+        rows = ElectricityService.delete(plug_type)
 
-        existing = ElectriciteRepository.find_by_plug_type(plug_type.upper())
-        if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Type de prise '{plug_type}' introuvable",
-            )
-
-        rows = ElectriciteRepository.delete(plug_type.upper())
-        MySQLConnection.commit()
         return {
             "message": f"Type de prise '{plug_type}' supprimé avec succès",
             "rows_affected": rows,
         }
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
-        MySQLConnection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()
 
 
 @router.get(
@@ -210,20 +170,14 @@ def delete_plug_type(plug_type: str, _=Depends(Security.secured_route)):
 )
 def get_countries_by_plug_type(plug_type: str):
     try:
-        MySQLConnection.connect()
-        results = ElectriciteRepository.find_countries_by_plug_type(plug_type.upper())
-        if not results:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Aucun pays trouvé pour le type de prise '{plug_type}'",
-            )
-        return results
-    except HTTPException:
-        raise
+        return ElectricityService.find_countries_by_plug_type(plug_type)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur serveur: {str(e)}",
         )
-    finally:
-        MySQLConnection.close()

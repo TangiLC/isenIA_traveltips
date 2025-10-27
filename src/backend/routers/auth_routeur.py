@@ -1,10 +1,11 @@
 # auth_routeur.py
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends, Query, Path
-from pydantic import BaseModel, Field
+from services.auth_service import AuthService
 from security.security import Security
 from models.auth import UserIn, UserPatch, UserOut, TokenResponse, LoginIn
-from repositories.auth_repository import AuthRepository
+
+# from repositories.auth_repository import AuthRepository
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -22,8 +23,7 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 )
 def get_test_token():
     try:
-        claims = {"sub": "test-user", "role": "user", "scope": "test"}
-        token = Security.create_token(claims)
+        token = AuthService.generate_test_token()
         return TokenResponse(access_token=token)
     except Exception as e:
         raise HTTPException(
@@ -45,27 +45,15 @@ def get_test_token():
     },
 )
 def login(credentials: LoginIn):
-    row = AuthRepository.get_by_name(credentials.pseudo)
-    if not row:
+    try:
+        token, user_data = AuthService.login(credentials.pseudo, credentials.password)
+        user_out = UserOut(**user_data)
+        return TokenResponse(access_token=token, user=user_out)
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Identifiants invalides"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
         )
-
-    stored_hash = row["password"]
-    if not Security.verify_password(credentials.password, stored_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Identifiants invalides"
-        )
-
-    claims = {
-        "sub": str(row["id"]),
-        "pseudo": row["pseudo"],
-        "role": row["role"],
-    }
-    token = Security.create_token(claims)
-
-    user_out = UserOut(id=int(row["id"]), pseudo=row["pseudo"], role=row["role"])
-    return TokenResponse(access_token=token, user=user_out)
 
 
 @router.get(
@@ -84,10 +72,11 @@ def get_user_by_name(
     pseudo: str = Query(..., min_length=1, max_length=255),
     _=Depends(Security.secured_route),
 ):
-    row = AuthRepository.get_by_name(pseudo)
-    if not row:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-    return UserOut(**AuthRepository.row_to_user_out(row))
+    try:
+        user_data = AuthService.get_by_name(pseudo)
+        return UserOut(**user_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.put(
@@ -108,14 +97,11 @@ def create_user(
     _=Depends(Security.secured_route),
 ):
 
-    existing = AuthRepository.get_by_name(data.pseudo)
-    if existing:
-        raise HTTPException(status_code=409, detail="Pseudo déjà utilisé")
-
-    hashed_password = Security.hash_password(data.password)
-    new_id = AuthRepository.create(data.pseudo, hashed_password, data.role.value)
-    row = AuthRepository.get_by_id(new_id)
-    return UserOut(**AuthRepository.row_to_user_out(row))
+    try:
+        user_data = AuthService.create(data.pseudo, data.password, data.role.value)
+        return UserOut(**user_data)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.patch(
@@ -135,26 +121,16 @@ def patch_user(
     data: UserPatch = ...,
     _=Depends(Security.secured_route),
 ):
-    current = AuthRepository.get_by_id(id)
-    if not current:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-
-    if data.password is not None:
-        hashed_password = Security.hash_password(data.password)
-    else:
-        hashed_password = current["password"]
-
-    truePartialUpdate = AuthRepository.update_partial(
-        id,
-        pseudo=None if data.pseudo is None else data.pseudo,
-        password=None if data.password is None else hashed_password,
-        role=None if data.role is None else data.role.value,
-    )
-
-    if not truePartialUpdate:
-        return UserOut(**AuthRepository.row_to_user_out(current))
-    row = AuthRepository.get_by_id(id)
-    return UserOut(**AuthRepository.row_to_user_out(row))
+    try:
+        user_data = AuthService.update_partial(
+            id,
+            pseudo=data.pseudo,
+            password=data.password,
+            role=None if data.role is None else data.role.value,
+        )
+        return UserOut(**user_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete(
@@ -173,8 +149,8 @@ def delete_user(
     id: int = Path(..., ge=1),
     _=Depends(Security.secured_route),
 ):
-    current = AuthRepository.get_by_id(id)
-    if not current:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-    AuthRepository.delete(id)
-    return None
+    try:
+        AuthService.delete(id)
+        return None
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

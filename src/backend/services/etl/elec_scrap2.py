@@ -29,7 +29,7 @@ class CountryPlugsETL:
             }
         )
         # même logique d’arborescence que tes autres ETL
-        self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        self.base_dir = Path(__file__).resolve().parents[4]
         self.output_path = self.base_dir / "src" / "db" / "normes_elec_pays.csv"
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
