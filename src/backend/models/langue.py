@@ -16,3 +16,4 @@ class Langue(BaseModel):
     name_fr: str
     name_local: str
     famille: Optional[Famille] = None
+    is_in_mongo: bool = Field(default=False, description="existe dans MongoDB")

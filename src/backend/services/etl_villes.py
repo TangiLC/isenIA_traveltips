@@ -128,7 +128,6 @@ class ETLVille:
         valid_alpha2 = df_countries["alpha2"].dropna().str.strip().str.lower().tolist()
         df["country_3166a2"] = df["country_3166a2"].fillna("").str.strip().str.lower()
         df = df[df["country_3166a2"].isin(valid_alpha2)]
-        print("*****df*****", df)
 
         # Nettoyer les valeurs textuelles
         df["name_en"] = df["name_en"].fillna("").str.strip()

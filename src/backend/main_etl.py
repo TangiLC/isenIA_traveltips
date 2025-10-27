@@ -103,7 +103,7 @@ class ETLOrchestrator:
         self._log("\n### PHASE 1: ETL Indépendants (Batch 1) ###", "INFO")
         phase1_batch1 = [
             ("ETL Currencies", etl_currencies.main),
-            ("ETL Langues", etl_langues.main),
+            ("ETL Conversations", etl_conversations.main),
         ]
         self.run_parallel(phase1_batch1, max_workers=2)
 
@@ -111,7 +111,7 @@ class ETLOrchestrator:
         self._log("\n### PHASE 1: ETL Indépendants (Batch 2) ###", "INFO")
         phase1_batch2 = [
             ("ETL Scraping Électricité", elec_scrap2.main),
-            ("ETL Conversations", etl_conversations.main),
+            ("ETL Langues", etl_langues.main),
         ]
         self.run_parallel(phase1_batch2, max_workers=2)
 

@@ -11,6 +11,7 @@ class LangueInfo(BaseModel):
     name_local: str
     famille_en: Optional[str] = None
     famille_fr: Optional[str] = None
+    is_in_mongo: bool
 
 
 class CurrencyInfo(BaseModel):

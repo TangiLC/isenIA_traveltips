@@ -38,6 +38,7 @@ def langue_component(country_data: Dict):
         name_local = langue.get("name_local", "N/A")
         famille_fr = langue.get("famille_fr")
         famille_en = langue.get("famille_en")
+        is_in_mongo = langue.get("is_in_mongo")
 
         with st.expander(f"{name_fr} ({iso639_2})"):
             col1, col2 = st.columns(2)
@@ -58,67 +59,73 @@ def langue_component(country_data: Dict):
             # Section conversations
             st.markdown("---")
             st.write("**📚 Conversations disponibles**")
+            if is_in_mongo:
+                if st.button(
+                    f"Charger les conversations en {name_fr}",
+                    key=f"conv_{iso639_2}",
+                    use_container_width=True,
+                ):
+                    with st.spinner(f"Chargement des conversations en {name_fr}..."):
+                        conversations = api_client.get_conversations_by_lang(iso639_2)
 
-            if st.button(
-                f"Charger les conversations en {name_fr}",
-                key=f"conv_{iso639_2}",
-                use_container_width=True,
-            ):
-                with st.spinner(f"Chargement des conversations en {name_fr}..."):
-                    conversations = api_client.get_conversations_by_lang(iso639_2)
+                        if conversations:
+                            st.success("✅ Conversations trouvée")
 
-                    if conversations:
-                        st.success("✅ Conversations trouvée")
+                            conversation = conversations[0]
+                            sentences = conversation.get("sentences", {})
 
-                        conversation = conversations[0]
-                        sentences = conversation.get("sentences", {})
+                            col1, col2, col3 = st.columns(3)
 
-                        col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.subheader("Salutations")
+                                st.write(
+                                    f"*Bonjour* : {sentences.get('GREETING_INFORMAL', '—')}"
+                                )
+                                st.write(
+                                    f"*Bonsoir* : {sentences.get('GREETING_EVENING', '—')}"
+                                )
+                                st.write(
+                                    f"*Au revoir* : {sentences.get('GREETING_DEPARTURE', '—')}"
+                                )
+                                st.write(f"*Merci* : {sentences.get('THANKS', '—')}")
+                                st.write(f"*SVP* : {sentences.get('PLEASE', '—')}")
+                                st.write(
+                                    f"*Je me nomme...* : {sentences.get('GIVE_OWN_NAME', '—')}"
+                                )
 
-                        with col1:
-                            st.subheader("Salutations")
-                            st.write(
-                                f"*Bonjour* : {sentences.get('GREETING_INFORMAL', '—')}"
-                            )
-                            st.write(
-                                f"*Bonsoir* : {sentences.get('GREETING_EVENING', '—')}"
-                            )
-                            st.write(
-                                f"*Au revoir* : {sentences.get('GREETING_DEPARTURE', '—')}"
-                            )
-                            st.write(f"*Merci* : {sentences.get('THANKS', '—')}")
-                            st.write(f"*SVP* : {sentences.get('PLEASE', '—')}")
-                            st.write(
-                                f"*Je me nomme...* : {sentences.get('GIVE_OWN_NAME', '—')}"
-                            )
+                            with col2:
+                                st.subheader("Nourriture")
+                                st.write(
+                                    f"*Repas de midi* : {sentences.get('MEAL_NOON', '—')}"
+                                )
+                                st.write(
+                                    f"*Dîner* : {sentences.get('MEAL_EVENING', '—')}"
+                                )
+                                st.write(f"*Pain* : {sentences.get('BREAD', '—')}")
+                                st.write(f"*Thé* : {sentences.get('TEA', '—')}")
+                                st.write(f"*Café* : {sentences.get('COFFEE', '—')}")
+                                st.write(f"*Bière* : {sentences.get('BEER', '—')}")
 
-                        with col2:
-                            st.subheader("Nourriture")
-                            st.write(
-                                f"*Repas de midi* : {sentences.get('MEAL_NOON', '—')}"
-                            )
-                            st.write(f"*Dîner* : {sentences.get('MEAL_EVENING', '—')}")
-                            st.write(f"*Pain* : {sentences.get('BREAD', '—')}")
-                            st.write(f"*Thé* : {sentences.get('TEA', '—')}")
-                            st.write(f"*Café* : {sentences.get('COFFEE', '—')}")
-                            st.write(f"*Bière* : {sentences.get('BEER', '—')}")
+                            with col3:
+                                st.subheader("Utilitaire")
+                                st.write(
+                                    f"*Toilettes* : {sentences.get('TOILET', '—')}"
+                                )
+                                st.write(
+                                    f"*Téléphone portable* : {sentences.get('CELLPHONE', '—')}"
+                                )
+                                st.write(
+                                    f"*Souhaite prendre une douche* : {sentences.get('NEED_SHOWER', '—')}"
+                                )
+                                st.write(
+                                    f"*où acheter ...* : {sentences.get('LOCATION_X_Q', '—')}"
+                                )
+                                st.write(
+                                    f"*Réseau internet* : {sentences.get('INTERNET_CONNECTION', '—')}"
+                                )
+                                st.write(
+                                    f"*Batterie* : {sentences.get('BATTERY', '—')}"
+                                )
 
-                        with col3:
-                            st.subheader("Utilitaire")
-                            st.write(f"*Toilettes* : {sentences.get('TOILET', '—')}")
-                            st.write(
-                                f"*Téléphone portable* : {sentences.get('CELLPHONE', '—')}"
-                            )
-                            st.write(
-                                f"*Souhaite prendre une douche* : {sentences.get('NEED_SHOWER', '—')}"
-                            )
-                            st.write(
-                                f"*où acheter ...* : {sentences.get('LOCATION_X_Q', '—')}"
-                            )
-                            st.write(
-                                f"*Réseau internet* : {sentences.get('INTERNET_CONNECTION', '—')}"
-                            )
-                            st.write(f"*Batterie* : {sentences.get('BATTERY', '—')}")
-
-                    else:
-                        st.warning(f"Aucune conversation disponible en {name_fr}")
+            else:
+                st.warning(f"Aucune conversation disponible en {name_fr}")

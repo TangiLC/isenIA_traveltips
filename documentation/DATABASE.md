@@ -240,7 +240,7 @@ Base de données MySQL pour une application de conseils de voyage, incluant des 
 
 ## Diagramme des Relations
 
-![Diagramme de la base de données](./src/static/assets/schema_bdd.png)
+![Diagramme de la base de données](./schema_bdd.png)
 
 ---
 

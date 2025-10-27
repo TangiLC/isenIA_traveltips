@@ -292,7 +292,7 @@ Vérifier la présence des fichiers suivants dans `/raw_sources/` :
 - `RPB Main Phrases.csv`
 - `currencies.json`
 
-**Note** : Voir [RAW_SOURCES.md](./RAW_SOURCES.md) pour les liens de téléchargement.
+**Note** : Voir [RAW_SOURCES.md](./documentation/RAW_SOURCES.md) pour les liens de téléchargement.
 
 #### 6. Lancer les conteneurs Docker
 
@@ -391,7 +391,7 @@ Les routes de modification (PUT, PATCH, DELETE) nécessitent un token JWT.
 ```bash
 curl -X POST "http://localhost:8000/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username": "votre_username", "password": "votre_password"}'
+  -d '{"pseudo": "votre_username", "password": "votre_password"}'
 ```
 
 **Token en mode dev (sans passer par la table Utilisateurs)** :_cette route sera supprimée à l'avenir !_
@@ -417,7 +417,7 @@ L'interface Streamlit propose :
 
 Pour une description détaillée du schéma relationnel, des tables, contraintes et relations, consultez :
 
-**[DATABASE.md](./DATABASE.md)**
+**[DATABASE.md](./documentation/DATABASE.md)**
 
 **Résumé des principales tables** :
 
@@ -436,7 +436,7 @@ Pour une description détaillée du schéma relationnel, des tables, contraintes
 
 Pour la liste complète et détaillée de tous les endpoints, consultez :
 
-**[API_ENDPOINTS.md](./API_ENDPOINTS.md)**
+**[API_ENDPOINTS.md](./documentation/API_ENDPOINTS.md)**
 
 ### Exemples de endpoints principaux
 
@@ -485,7 +485,7 @@ Ce projet agrège des données depuis multiples sources ouvertes (APIs, scraping
 
 Pour la documentation complète des sources, licences et attributions :
 
-**[RAW_SOURCES.md](./RAW_SOURCES.md)**
+**[RAW_SOURCES.md](./documentation/RAW_SOURCES.md)**
 
 **Crédits principaux** :
 

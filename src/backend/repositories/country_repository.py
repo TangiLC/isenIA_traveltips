@@ -56,6 +56,7 @@ class CountryRepository:
                 l.name_en,
                 l.name_fr,
                 l.name_local,
+                l.is_in_mongo,
                 f.branche_en as famille_en,
                 f.branche_fr as famille_fr
             FROM Pays_Langues pl

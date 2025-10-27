@@ -18,7 +18,11 @@ from routers import (
 # Création de l'application FastAPI
 app = FastAPI(
     title="TravelTips API",
-    description="API REST pour la gestion des données info pays",
+    description="""API REST pour la gestion des données de l'application.\n
+    Les routes sont regroupées par thème,\n
+    chaque thème présente un CRUD complet, avec GET en route publique\n
+    et le reste en routes protégées par Token JWT.
+    """,
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

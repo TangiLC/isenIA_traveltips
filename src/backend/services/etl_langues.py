@@ -5,7 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from connexion.mysql_connect import MySQLConnection
+from connexion.mongo_connect import MongoDBConnection
 from repositories.langue_repository import LangueRepository
+from repositories.conversation_repository import ConversationRepository
 
 
 class LanguageETL:
@@ -13,8 +15,6 @@ class LanguageETL:
 
     def __init__(self):
         """Initialisation des chemins de fichiers"""
-        # Le fichier Python est dans ./src/backend/services
-        # On remonte de 3 niveaux pour atteindre la racine du projet
         self.base_dir = Path(__file__).resolve().parent.parent.parent.parent
         self.iso1_path = self.base_dir / "raw_sources" / "iso_639-1.csv"
         self.iso2_path = self.base_dir / "raw_sources" / "iso_639-2.csv"
@@ -162,6 +162,47 @@ class LanguageETL:
         print("Étape 8 : Formatage des noms appliqué")
         return df
 
+    def check_mongo_existence(self, df):
+        """Étape 9: Vérification de l'existence dans MongoDB
+
+        Args:
+            df (pd.DataFrame): DataFrame à traiter
+
+        Returns:
+            pd.DataFrame: DataFrame avec colonne is_in_mongo
+        """
+        print("\n--- Étape 9: Vérification MongoDB ---")
+        try:
+            MongoDBConnection.connect()
+            print("Connexion MongoDB établie pour vérification...")
+
+            def check_in_mongo(iso_code):
+                """Vérifie si le code ISO existe dans MongoDB"""
+                try:
+                    count = MongoDBConnection.count_documents(
+                        ConversationRepository.COLLECTION_NAME,
+                        {"lang639-2": str(iso_code).lower()},
+                    )
+                    return count > 0
+                except Exception as e:
+                    print(f"⚠ Erreur vérification {iso_code}: {e}")
+                    return False
+
+            # Appliquer la vérification sur toute la colonne
+            df["is_in_mongo"] = df["639-2"].apply(check_in_mongo)
+
+            mongo_count = df["is_in_mongo"].sum()
+            print(f"✓ {mongo_count}/{len(df)} langues présentes dans MongoDB")
+
+        except Exception as e:
+            print(f"⚠ Erreur lors de la vérification MongoDB: {e}")
+            print("→ Toutes les langues marquées comme absentes de MongoDB")
+            df["is_in_mongo"] = False
+        finally:
+            MongoDBConnection.close()
+
+        return df
+
     def transform(self, df_iso1, df_iso2):
         """Pipeline complet de transformation
 
@@ -199,6 +240,9 @@ class LanguageETL:
         # Étape 8: Formatage des noms
         df_final = self.format_names(df_final)
 
+        # Étape 9: Vérification MongoDB
+        df_final = self.check_mongo_existence(df_final)
+
         print(
             f"DataFrame final : {len(df_final)} lignes × {len(df_final.columns)} colonnes"
         )
@@ -206,7 +250,7 @@ class LanguageETL:
         return df_final
 
     def load(self, df):
-        """Étape 9: Sauvegarde du DataFrame dans le fichier CSV et MySQL
+        """Étape 10: Sauvegarde du DataFrame dans le fichier CSV et MySQL
         Utilise le repository au lieu d'accéder directement à la BDD
 
         Args:
@@ -234,6 +278,7 @@ class LanguageETL:
                         name_fr=row["name_fr"],
                         name_local=row["name_local"],
                         branche_en=row["family"] if pd.notna(row["family"]) else None,
+                        is_in_mongo=bool(row["is_in_mongo"]),
                     )
 
                     if rowcount > 0:

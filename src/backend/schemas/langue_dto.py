@@ -17,6 +17,7 @@ class LangueResponse(BaseModel):
     name_fr: str = Field(..., description="Nom de la langue en français")
     name_local: str = Field(..., description="Nom de la langue locale")
     famille: Optional[FamilleDTO] = Field(None, description="Famille linguistique")
+    is_in_mongo: bool = Field(default=False, description="Présence dans MongoDB")
 
 
 class LangueCreateRequest(BaseModel):
@@ -27,6 +28,7 @@ class LangueCreateRequest(BaseModel):
     name_fr: str = Field(..., description="Nom de la langue en français")
     name_local: str = Field(..., description="Nom de la langue locale")
     branche_en: Optional[str] = Field(None, description="Nom de la famille en anglais")
+    is_in_mongo: bool = Field(default=False, description="Présence dans MongoDB")
 
 
 class LangueUpdateRequest(BaseModel):
@@ -36,6 +38,7 @@ class LangueUpdateRequest(BaseModel):
     name_fr: Optional[str] = Field(None, description="Nom de la langue en français")
     name_local: Optional[str] = Field(None, description="Nom de la langue locale")
     branche_en: Optional[str] = Field(None, description="Nom de la famille en anglais")
+    is_in_mongo: bool = Field(default=False, description="Présence dans MongoDB")
 
 
 def map_to_response(db_row: dict) -> LangueResponse:
@@ -57,4 +60,5 @@ def map_to_response(db_row: dict) -> LangueResponse:
         name_fr=db_row["name_fr"],
         name_local=db_row["name_local"],
         famille=famille,
+        is_in_mongo=db_row["is_in_mongo"],
     )

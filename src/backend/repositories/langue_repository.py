@@ -21,6 +21,7 @@ class LangueRepository:
                 l.name_en,
                 l.name_fr,
                 l.name_local,
+                l.is_in_mongo,
                 f.branche_en,
                 f.branche_fr
             FROM Langues l
@@ -46,6 +47,7 @@ class LangueRepository:
                 l.name_en,
                 l.name_fr,
                 l.name_local,
+                l.is_in_mongo,
                 f.branche_en,
                 f.branche_fr
             FROM Langues l
@@ -75,6 +77,7 @@ class LangueRepository:
                 l.name_en,
                 l.name_fr,
                 l.name_local,
+                l.is_in_mongo,
                 f.branche_en,
                 f.branche_fr
             FROM Langues l
@@ -97,10 +100,10 @@ class LangueRepository:
         """
         query = """
                 SELECT id FROM Familles
-                WHERE LOWER(f.branche_en) LIKE LOWER (%s)
-                OR LOWER(f.branche_fr) LIKE LOWER(%s)
+                WHERE LOWER(branche_en) LIKE LOWER (%s)
+                OR LOWER(branche_fr) LIKE LOWER(%s)
                 """
-        result = MySQLConnection.execute_query(query, (branche_en,))
+        result = MySQLConnection.execute_query(query, (branche_en, branche_en))
         return result[0]["id"] if result else None
 
     @staticmethod
@@ -110,6 +113,7 @@ class LangueRepository:
         name_fr: str,
         name_local: str,
         branche_en: Optional[str] = None,
+        is_in_mongo: bool = False,
     ) -> int:
         """Crée ou remplace une langue (REPLACE INTO)
 
@@ -119,6 +123,7 @@ class LangueRepository:
             name_fr: Nom en français
             name_local: Nom local
             branche_en: Nom de la famille (optionnel)
+            is_in_mongo: Présence dans MongoDB (défaut: False)
 
         Returns:
             Nombre de lignes affectées
@@ -129,11 +134,11 @@ class LangueRepository:
 
         query = """
             REPLACE INTO Langues 
-            (iso639_2, name_en, name_fr, name_local, famille_id)
-            VALUES (%s, %s, %s, %s, %s)
+            (iso639_2, name_en, name_fr, name_local, famille_id, is_in_mongo)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
         return MySQLConnection.execute_update(
-            query, (iso639_2, name_en, name_fr, name_local, famille_id)
+            query, (iso639_2, name_en, name_fr, name_local, famille_id, is_in_mongo)
         )
 
     @staticmethod
@@ -157,8 +162,8 @@ class LangueRepository:
 
             query = """
                 REPLACE INTO Langues 
-                (iso639_2, name_en, name_fr, name_local, famille_id)
-                VALUES (%s, %s, %s, %s, %s)
+                (iso639_2, name_en, name_fr, name_local, famille_id, is_in_mongo)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
             rowcount = MySQLConnection.execute_update(
                 query,
@@ -168,6 +173,7 @@ class LangueRepository:
                     langue["name_fr"],
                     langue["name_local"],
                     famille_id,
+                    langue.get("is_in_mongo", False),
                 ),
             )
             total_inserted += rowcount
@@ -180,13 +186,19 @@ class LangueRepository:
 
         Args:
             iso639_2: Code ISO 639-2 de la langue à modifier
-            updates: Dictionnaire des champs à mettre à jour (peut inclure 'famille_id')
+            updates: Dictionnaire des champs à mettre à jour (peut inclure 'famille_id', 'is_in_mongo')
 
         Returns:
             Nombre de lignes modifiées
         """
         # Champs autorisés pour la mise à jour
-        allowed_fields = {"name_en", "name_fr", "name_local", "famille_id"}
+        allowed_fields = {
+            "name_en",
+            "name_fr",
+            "name_local",
+            "famille_id",
+            "is_in_mongo",
+        }
         filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
 
         if not filtered_updates:
@@ -219,6 +231,7 @@ class LangueRepository:
         name_fr: str,
         name_local: str,
         branche_en: Optional[str] = None,
+        is_in_mongo: bool = False,
     ) -> int:
         """Insère une langue uniquement si elle n'existe pas (INSERT IGNORE)
 
@@ -228,6 +241,7 @@ class LangueRepository:
             name_fr: Nom en français
             name_local: Nom local
             branche_en: Nom de la famille (optionnel)
+            is_in_mongo: Présence dans MongoDB (défaut: False)
 
         Returns:
             Nombre de lignes insérées
@@ -237,10 +251,18 @@ class LangueRepository:
             famille_id = LangueRepository.get_famille_id_by_branche(branche_en)
 
         query = """
-            INSERT IGNORE INTO Langues 
-            (iso639_2, name_en, name_fr, name_local, famille_id)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO Langues 
+            (iso639_2, name_en, name_fr, name_local, famille_id, is_in_mongo)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+               iso639_2 = VALUES(iso639_2),
+               name_en = VALUES(name_en),
+               name_fr = VALUES(name_fr),
+               name_local = VALUES(name_local),
+               famille_id = VALUES(famille_id),
+               is_in_mongo = VALUES(is_in_mongo)
+            
         """
         return MySQLConnection.execute_update(
-            query, (iso639_2, name_en, name_fr, name_local, famille_id)
+            query, (iso639_2, name_en, name_fr, name_local, famille_id, is_in_mongo)
         )

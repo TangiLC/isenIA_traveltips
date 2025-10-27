@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS Langues (
     name_fr VARCHAR(100) NOT NULL,
     name_local VARCHAR(100) NOT NULL,
     famille_id INT,
+    is_in_mongo BOOLEAN DEFAULT FALSE,
     CONSTRAINT fk_langue_famille 
         FOREIGN KEY (famille_id) 
         REFERENCES Familles(id)

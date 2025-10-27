@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from typing import List
 from bson.errors import InvalidId
 from connexion.mongo_connect import MongoDBConnection
+from connexion.mysql_connect import MySQLConnection
 from repositories.conversation_repository import ConversationRepository
+from repositories.langue_repository import LangueRepository
 from schemas.conversation_dto import (
     ConversationResponse,
     ConversationCreateRequest,
@@ -12,6 +14,35 @@ from schemas.conversation_dto import (
 from security.security import Security
 
 router = APIRouter(prefix="/api/conversations", tags=["Conversations"])
+
+
+def sync_langue_mongo_status(lang_code: str, is_in_mongo: bool):
+    """Helper pour synchroniser le statut is_in_mongo dans MySQL
+
+    Args:
+        lang_code: Code ISO 639-2 de la langue
+        is_in_mongo: True si la langue existe dans MongoDB, False sinon
+    """
+    try:
+        MySQLConnection.connect()
+
+        # Vérifier que la langue existe dans MySQL
+        langue = LangueRepository.find_by_iso639_2(lang_code)
+
+        if not langue:
+            print(
+                f"[WARNING] Langue '{lang_code}' introuvable dans MySQL. Synchronisation ignorée."
+            )
+            return
+
+        # Mettre à jour is_in_mongo
+        LangueRepository.update_partial(lang_code, {"is_in_mongo": is_in_mongo})
+        print(f"[INFO] Langue '{lang_code}' -> is_in_mongo = {is_in_mongo}")
+
+    except Exception as e:
+        print(f"[ERROR] Échec synchronisation MySQL pour '{lang_code}': {str(e)}")
+    finally:
+        MySQLConnection.close()
 
 
 @router.get(
@@ -146,10 +177,15 @@ def create_conversation(
         # Insérer dans MongoDB
         conversation_id = ConversationRepository.create(conversation_data)
 
+        # Synchroniser is_in_mongo = True dans MySQL
+        lang_code = conversation_data.get("lang639-2")
+        if lang_code:
+            sync_langue_mongo_status(lang_code, True)
+
         return {
             "message": "Conversation créée avec succès",
             "id": conversation_id,
-            "lang639-2": conversation_data.get("lang639-2"),
+            "lang639-2": lang_code,
         }
     except ValueError as e:
         raise HTTPException(
@@ -169,11 +205,13 @@ def create_conversation(
     "/{conversation_id}",
     response_model=dict,
     summary="Mise à jour partielle d'une conversation",
-    description="Met à jour uniquement les champs fournis (schéma flexible)",
+    description="Met à jour uniquement les champs fournis (schéma flexible). Modification de lang639-2 interdite.",
     responses={
         200: {"description": "Conversation mise à jour"},
         404: {"description": "Conversation non trouvée"},
-        400: {"description": "Données invalides"},
+        400: {
+            "description": "Données invalides ou modification de lang639-2 interdite"
+        },
         500: {"description": "Erreur serveur"},
     },
 )
@@ -195,6 +233,13 @@ def update_conversation(
 
         # Convertir en opération MongoDB $set
         update_data = updates.to_mongo_update()
+
+        # VERROUILLAGE : Interdire modification de lang639-2
+        if update_data.get("$set") and "lang639-2" in update_data["$set"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Modification du champ 'lang639-2' interdite. Seuls les champs comme 'sentences' peuvent être modifiés.",
+            )
 
         if not update_data.get("$set"):
             raise HTTPException(
@@ -234,11 +279,13 @@ def update_conversation(
     "/{conversation_id}",
     response_model=dict,
     summary="Remplacement complet d'une conversation",
-    description="Remplace entièrement une conversation (tous les champs)",
+    description="Remplace entièrement une conversation (tous les champs). Modification de lang639-2 interdite.",
     responses={
         200: {"description": "Conversation remplacée"},
         404: {"description": "Conversation non trouvée"},
-        400: {"description": "Données invalides"},
+        400: {
+            "description": "Données invalides ou tentative de modification de lang639-2"
+        },
         500: {"description": "Erreur serveur"},
     },
 )
@@ -260,6 +307,16 @@ def replace_conversation(
 
         # Convertir le DTO en document MongoDB
         conversation_data = conversation.to_mongo()
+
+        # VERROUILLAGE : Vérifier que lang639-2 n'a pas changé
+        existing_lang = existing.get("lang639-2")
+        new_lang = conversation_data.get("lang639-2")
+
+        if existing_lang != new_lang:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Modification de 'lang639-2' interdite. Valeur actuelle: '{existing_lang}', valeur demandée: '{new_lang}'",
+            )
 
         # Remplacer (sans modifier l'_id)
         update_data = {"$set": conversation_data}
@@ -294,7 +351,7 @@ def replace_conversation(
     "/{conversation_id}",
     response_model=dict,
     summary="Supprimer une conversation",
-    description="Supprime une conversation par son _id MongoDB",
+    description="Supprime une conversation par son _id MongoDB et met à jour is_in_mongo dans MySQL",
     responses={
         200: {"description": "Conversation supprimée"},
         404: {"description": "Conversation non trouvée"},
@@ -309,7 +366,7 @@ def delete_conversation(
     try:
         MongoDBConnection.connect()
 
-        # Vérifier que la conversation existe
+        # Vérifier que la conversation existe et récupérer lang639-2
         existing = ConversationRepository.find_by_id(conversation_id)
         if not existing:
             raise HTTPException(
@@ -317,12 +374,20 @@ def delete_conversation(
                 detail=f"Conversation avec l'ID '{conversation_id}' introuvable",
             )
 
+        lang_code = existing.get("lang639-2")
+
         # Supprimer
         deleted_count = ConversationRepository.delete(conversation_id)
+
+        # Synchroniser is_in_mongo = False dans MySQL
+        # Pas de count car il n'y a qu'une seule conversation par langue
+        if lang_code:
+            sync_langue_mongo_status(lang_code, False)
 
         return {
             "message": f"Conversation '{conversation_id}' supprimée avec succès",
             "deleted_count": deleted_count,
+            "lang639-2": lang_code,
         }
     except HTTPException:
         raise
