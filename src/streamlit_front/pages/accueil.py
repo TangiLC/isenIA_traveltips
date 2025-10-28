@@ -22,12 +22,6 @@ st.set_page_config(
     layout=PAGE_LAYOUT,
 )
 
-# Sidebar
-with st.sidebar:
-    search_term = search_bar(
-        placeholder="Rechercher un pays par nom (min. 4 caractères)...",
-        default_value="",
-    )
 
 # En-tête
 st.title(f"{PAGES_CONFIG['accueil']['icon']} {PAGES_CONFIG['accueil']['title']}")

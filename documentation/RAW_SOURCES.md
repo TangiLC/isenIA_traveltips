@@ -4,7 +4,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## 📋 Vue d'ensemble
+## Vue d'ensemble
 
 | Catégorie              | Source                | Format   | Méthode  |
 | ---------------------- | --------------------- | -------- | -------- |
@@ -21,7 +21,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## 🌍 Données Géographiques
+## Données Géographiques
 
 ### Pays (ISO 3166)
 
@@ -76,7 +76,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## 💱 Données Économiques
+## Données Économiques
 
 ### Monnaies (ISO 4217)
 
@@ -93,7 +93,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## 🗣️ Données Linguistiques
+## Données Linguistiques
 
 ### Langues (ISO 639-2)
 
@@ -151,7 +151,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## ⚡ Données Électriques
+## Données Électriques
 
 ### Normes par Pays
 
@@ -187,7 +187,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## 🌤️ Données Météorologiques
+## Données Météorologiques
 
 ### Historique Météo 2024
 
@@ -216,7 +216,7 @@ Ce document référence toutes les sources de données utilisées dans le projet
 
 ---
 
-## 📊 Architecture ETL
+## Architecture ETL
 
 ### Pipeline d'Exécution
 
@@ -242,7 +242,7 @@ Phase 5 (séquentiel): Météo
 
 ---
 
-## 📝 Licences et Crédits
+## Licences et Crédits
 
 ### Licences Globales
 
@@ -280,7 +280,7 @@ CREATE TABLE Credits (
 
 ---
 
-## 🔄 Maintenance
+## Maintenance
 
 ### Fréquence de Mise à Jour
 
@@ -296,10 +296,10 @@ Les données sont chargées ponctuellement lors de l'initialisation de la base d
 
 Avant une mise à jour majeure, vérifier :
 
-- ✅ URLs des sources toujours actives
-- ✅ Formats de données inchangés
-- ✅ Licences toujours valides
-- ✅ Rate limits API respectés
+- URLs des sources toujours actives
+- Formats de données inchangés
+- Licences toujours valides
+- Rate limits API respectés
 
 ---
 

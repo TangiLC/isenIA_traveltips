@@ -155,29 +155,3 @@ def delete_plug_type(plug_type: str, _=Depends(Security.secured_route)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression: {str(e)}",
         )
-
-
-@router.get(
-    "/{plug_type}/countries",
-    response_model=List[dict],
-    summary="Lister les pays utilisant un type de prise donné",
-    description="Retourne la liste des pays où le type de prise spécifié est utilisé",
-    responses={
-        200: {"description": "Liste des pays utilisant le type de prise"},
-        404: {"description": "Aucun pays trouvé pour ce type de prise"},
-        500: {"description": "Erreur serveur"},
-    },
-)
-def get_countries_by_plug_type(plug_type: str):
-    try:
-        return ElectricityService.find_countries_by_plug_type(plug_type)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur serveur: {str(e)}",
-        )

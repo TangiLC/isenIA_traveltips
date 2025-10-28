@@ -14,12 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Sidebar
-with st.sidebar:
-    search_term = search_bar(
-        placeholder="Rechercher un pays par nom (min. 4 caractères)...",
-        default_value="",
-    )
+
 
 # Page d'accueil par défaut
 st.title(f"{APP_ICON} {APP_TITLE}")
