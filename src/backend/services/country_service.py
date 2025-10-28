@@ -65,6 +65,32 @@ class CountryService:
             MySQLConnection.close()
 
     @staticmethod
+    def get_countries_by_plug_type(plug_type: str) -> List[Dict[str, Any]]:
+        """Liste les pays utilisant un type de prise
+
+        Args:
+            plug_type: Identifiant du type de prise
+
+        Returns:
+            Liste des pays
+
+        Raises:
+            ValueError: Si aucun pays trouvé
+        """
+        try:
+            MySQLConnection.connect()
+            results = CountryRepository.get_countries_by_plug_type(plug_type.upper())
+
+            if not results:
+                raise ValueError(
+                    f"Aucun pays trouvé pour le type de prise '{plug_type}'"
+                )
+
+            return results
+        finally:
+            MySQLConnection.close()
+
+    @staticmethod
     def get_all(skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         """Liste tous les pays avec pagination
 

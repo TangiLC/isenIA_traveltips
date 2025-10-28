@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from schemas.country_dto import CountryCreate, CountryUpdate, CountryResponse
 from services.country_service import CountryService
 
@@ -66,6 +66,32 @@ def get_countries_by_name(name: str):
         else:
             status_code = 404
         raise HTTPException(status_code=status_code, detail=str(e))
+
+
+@router.get(
+    "/by_plug_type/{plug_type}",
+    response_model=List[dict],
+    summary="Lister les pays utilisant un type de prise donné",
+    description="Retourne la liste des pays où le type de prise spécifié est utilisé",
+    responses={
+        200: {"description": "Liste des pays utilisant le type de prise"},
+        404: {"description": "Aucun pays trouvé pour ce type de prise"},
+        500: {"description": "Erreur serveur"},
+    },
+)
+def get_countries_by_plug_type(plug_type: str):
+    try:
+        return CountryService.get_countries_by_plug_type(plug_type)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur serveur: {str(e)}",
+        )
 
 
 @router.get(
