@@ -35,14 +35,15 @@ Obtention d’un token : `/auth/test_token` (dev), `/auth/login` (authentificati
 
 ## Pays (Countries)
 
-| Méthode | Chemin                          | Rôle                                    | Sécurité | Codes de réponse                         |
-| ------- | ------------------------------- | --------------------------------------- | -------- | ---------------------------------------- |
-| GET     | `/api/countries/by_id/{alpha2}` | Détails d’un pays par code ISO alpha-2  | Public   | `200`, `404`, `422`, `500`               |
-| GET     | `/api/countries/by_name/{name}` | Recherche par nom (en/fr/local)         | Public   | `200`, `404`, `422`, `500`               |
-| GET     | `/api/countries/`               | Liste paginée des pays (sans relations) | Public   | `200`, `422`, `500`                      |
-| POST    | `/api/countries/`               | Ajouter un pays (avec relations)        | **JWT**  | `200`, `201`, `400`, `403`, `422`, `500` |
-| PUT     | `/api/countries/{alpha2}`       | Modifier un pays                        | **JWT**  | `200`, `403`, `404`, `422`, `500`        |
-| DELETE  | `/api/countries/{alpha2}`       | Supprimer un pays (cascade)             | **JWT**  | `200`, `403`, `404`, `500`, `422`        |
+| Méthode | Chemin                               | Rôle                                      | Sécurité | Codes de réponse                         |
+| ------- | ------------------------------------ | ----------------------------------------- | -------- | ---------------------------------------- | --- |
+| GET     | `/api/countries/by_id/{alpha2}`      | Détails d’un pays par code ISO alpha-2    | Public   | `200`, `404`, `422`, `500`               |
+| GET     | `/api/countries/by_name/{name}`      | Recherche par nom (en/fr/local)           | Public   | `200`, `404`, `422`, `500`               |
+| GET     | `/api/countries/`                    | Liste paginée des pays (sans relations)   | Public   | `200`, `422`, `500`                      |
+| GET     | `/api/countries/by_plug_type/{type}` | Liste des pays utilisant un type de prise | Public   | `200`, `404`, `500`, `422`               |     |
+| POST    | `/api/countries/`                    | Ajouter un pays (avec relations)          | **JWT**  | `200`, `201`, `400`, `403`, `422`, `500` |
+| PUT     | `/api/countries/{alpha2}`            | Modifier un pays                          | **JWT**  | `200`, `403`, `404`, `422`, `500`        |
+| DELETE  | `/api/countries/{alpha2}`            | Supprimer un pays (cascade)               | **JWT**  | `200`, `403`, `404`, `500`, `422`        |
 
 ---
 
@@ -73,14 +74,13 @@ Obtention d’un token : `/auth/test_token` (dev), `/auth/login` (authentificati
 
 ## Électricité (Types de prises)
 
-| Méthode | Chemin                                   | Rôle                                      | Sécurité | Codes de réponse                  |
-| ------- | ---------------------------------------- | ----------------------------------------- | -------- | --------------------------------- |
-| GET     | `/api/electricite`                       | Lister tous les types de prises           | Public   | `200`, `500`                      |
-| GET     | `/api/electricite/{plug_type}`           | Obtenir un type de prise (A–O)            | Public   | `200`, `404`, `500`, `422`        |
-| GET     | `/api/electricite/{plug_type}/countries` | Pays utilisant un type de prise           | Public   | `200`, `404`, `500`, `422`        |
-| PUT     | `/api/electricite`                       | Créer/remplacer un type de prise (upsert) | **JWT**  | `201`, `403`, `500`, `422`        |
-| PATCH   | `/api/electricite/{plug_type}`           | Mise à jour partielle (images)            | **JWT**  | `200`, `403`, `404`, `500`, `422` |
-| DELETE  | `/api/electricite/{plug_type}`           | Supprimer un type de prise                | **JWT**  | `200`, `403`, `404`, `500`, `422` |
+| Méthode | Chemin                         | Rôle                                      | Sécurité | Codes de réponse                  |
+| ------- | ------------------------------ | ----------------------------------------- | -------- | --------------------------------- |
+| GET     | `/api/electricite`             | Lister tous les types de prises           | Public   | `200`, `500`                      |
+| GET     | `/api/electricite/{plug_type}` | Obtenir un type de prise (A–O)            | Public   | `200`, `404`, `500`, `422`        |
+| PUT     | `/api/electricite`             | Créer/remplacer un type de prise (upsert) | **JWT**  | `201`, `403`, `500`, `422`        |
+| PATCH   | `/api/electricite/{plug_type}` | Mise à jour partielle (images)            | **JWT**  | `200`, `403`, `404`, `500`, `422` |
+| DELETE  | `/api/electricite/{plug_type}` | Supprimer un type de prise                | **JWT**  | `200`, `403`, `404`, `500`, `422` |
 
 ---
 
@@ -125,12 +125,13 @@ Obtention d’un token : `/auth/test_token` (dev), `/auth/login` (authentificati
 
 ---
 
-## Racine & Santé
+## Racine, Santé & Crédits
 
-| Méthode | Chemin    | Rôle                    | Sécurité | Codes de réponse |
-| ------- | --------- | ----------------------- | -------- | ---------------- |
-| GET     | `/`       | Point d’entrée de l’API | Public   | `200`            |
-| GET     | `/health` | Health check            | Public   | `200`            |
+| Méthode | Chemin         | Rôle                    | Sécurité | Codes de réponse |
+| ------- | -------------- | ----------------------- | -------- | ---------------- |
+| GET     | `/`            | Point d’entrée de l’API | Public   | `200`            |
+| GET     | `/health`      | Health check            | Public   | `200`            |
+| GET     | `/api/credits` | Sources des données     | Public   | `200`            |
 
 ---
 

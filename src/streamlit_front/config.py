@@ -20,7 +20,7 @@ API_ROUTES: Dict[str, str] = {
     "country_by_name": "/api/countries/by_name/{name}",
     "meteo": "/api/meteo/{geoname_id}",
     "conversations": "/api/conversations/by_lang/{lang_code}",
-    "country_by_plug": "/api/electricite/{plug_type}/countries",
+    "country_by_plug": "/api/countries/by_plug_type/{plug_type}",
     "health": "/health",
 }
 

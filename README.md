@@ -84,7 +84,6 @@ Ce projet a été développé dans un contexte éducatif, inspiré par des resso
 | **Python 3.11+**       | Langage principal                       |
 | **FastAPI**            | Framework API RESTful                   |
 | **Pydantic**           | Validation et sérialisation des données |
-| **SQLAlchemy**         | ORM pour MySQL                          |
 | **PyMongo**            | Client MongoDB                          |
 | **PyJWT**              | Génération et validation JWT            |
 | **bcrypt**             | Hashage de mots de passe                |
