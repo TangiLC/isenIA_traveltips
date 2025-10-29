@@ -1,7 +1,7 @@
 import pytest
 import src.backend.orm.country_orm as repo
 
-CountryRepository = repo.CountryRepository
+CountryOrm = repo.CountryOrm
 
 
 @pytest.fixture
@@ -225,12 +225,12 @@ def patch_mysql(monkeypatch, call_log):
 
 
 def test_normalize_string():
-    assert CountryRepository._normalize_string("  Éléphant  ") == "elephant"
-    assert CountryRepository._normalize_string("Ça") == "ca"
+    assert CountryOrm._normalize_string("  Éléphant  ") == "elephant"
+    assert CountryOrm._normalize_string("Ça") == "ca"
 
 
 def test_get_by_alpha2_enrichit_relations(call_log):
-    data = CountryRepository.get_by_alpha2("FR")
+    data = CountryOrm.get_by_alpha2("FR")
     assert data["iso3166a2"] == "fr"
     assert isinstance(data.get("langues"), list) and len(data["langues"]) >= 1
     assert isinstance(data.get("currencies"), list) and len(data["currencies"]) >= 1
@@ -251,11 +251,11 @@ def test_get_by_alpha2_not_found(monkeypatch):
     monkeypatch.setattr(
         repo.MySQLConnection, "execute_query", staticmethod(empty_query)
     )
-    assert CountryRepository.get_by_alpha2("zz") is None
+    assert CountryOrm.get_by_alpha2("zz") is None
 
 
 def test_get_all_pagine():
-    out = CountryRepository.get_all(skip=1, limit=1)
+    out = CountryOrm.get_all(skip=1, limit=1)
     assert isinstance(out, list) and len(out) == 1
 
 
@@ -267,33 +267,31 @@ def test_get_by_name_appelle_get_by_alpha2(monkeypatch):
         calls["by_alpha2"].append(iso2)
         return {"iso3166a2": iso2, "name_en": f"X-{iso2}"}
 
-    monkeypatch.setattr(
-        CountryRepository, "get_by_alpha2", staticmethod(fake_by_alpha2)
-    )
-    res = CountryRepository.get_by_name("  PÁYS  ")
+    monkeypatch.setattr(CountryOrm, "get_by_alpha2", staticmethod(fake_by_alpha2))
+    res = CountryOrm.get_by_name("  PÁYS  ")
     assert isinstance(res, list) and len(res) == 2
     assert set(calls["by_alpha2"]) == {"fr", "de"}  # vient du fake SELECT DISTINCT
 
 
 def test_upsert_pays():
-    n = CountryRepository.upsert_pays(
+    n = CountryOrm.upsert_pays(
         "fr", "FRA", "France", "France", "France", "48.85", "2.35"
     )
     assert n == 1
 
 
 def test_delete_pays():
-    ok = CountryRepository.delete_pays("FR")
+    ok = CountryOrm.delete_pays("FR")
     assert ok is True
 
 
 def test_update_pays_avec_champs():
-    ok = CountryRepository.update_pays("fr", {"name_en": "France", "lat": 48.8})
+    ok = CountryOrm.update_pays("fr", {"name_en": "France", "lat": 48.8})
     assert ok is True
 
 
 def test_update_pays_sans_champ_ne_fait_rien(call_log):
-    ok = CountryRepository.update_pays("fr", {})
+    ok = CountryOrm.update_pays("fr", {})
     assert ok is False
     # aucun UPDATE ne doit avoir été appelé
     assert not any(
@@ -302,33 +300,33 @@ def test_update_pays_sans_champ_ne_fait_rien(call_log):
 
 
 def test_delete_relations_declenche_4_updates(call_log):
-    CountryRepository.delete_relations("FR")
+    CountryOrm.delete_relations("FR")
     ups = [q for q, _ in call_log["execute_update"]]
     assert sum(q.startswith("DELETE FROM ") for q in ups) >= 4
 
 
 def test_insert_langues_ignore_vides_et_compte_lignes():
-    n = CountryRepository.insert_langues("fr", ["eng", "", " fra ", None, "deu"])
+    n = CountryOrm.insert_langues("fr", ["eng", "", " fra ", None, "deu"])
     assert n == 3  # "eng", "fra", "deu"
 
 
 def test_insert_monnaies_uppercase_et_compte_lignes():
-    n = CountryRepository.insert_monnaies("fr", [" eur ", "", "usd", None])
+    n = CountryOrm.insert_monnaies("fr", [" eur ", "", "usd", None])
     assert n == 2  # "EUR", "USD"
 
 
 def test_insert_borders_applique_regles():
     # fr avec doublons, self-loop et désordre; ne doivent rester que paires triées uniques
-    n = CountryRepository.insert_borders("fr", ["de", "fr", "it", "de", "  ES  "])
+    n = CountryOrm.insert_borders("fr", ["de", "fr", "it", "de", "  ES  "])
     # paires uniques attendues: ('de','fr')->('de','fr'), ('es','fr'), ('fr','it')->('fr','it') => 3
     assert n == 3
 
 
 def test_insert_electricite_ignores_vides_et_compte_lignes():
-    n = CountryRepository.insert_electricite("fr", [" c ", "", None, "F"], "230", "50")
+    n = CountryOrm.insert_electricite("fr", [" c ", "", None, "F"], "230", "50")
     assert n == 2  # C, F
 
 
 def test_get_countries_by_plug_type():
-    res = CountryRepository.get_countries_by_plug_type("C")
+    res = CountryOrm.get_countries_by_plug_type("C")
     assert isinstance(res, list) and len(res) >= 1

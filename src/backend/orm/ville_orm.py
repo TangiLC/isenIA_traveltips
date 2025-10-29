@@ -3,7 +3,7 @@ from models.ville import Ville
 from connexion.mysql_connect import MySQLConnection
 
 
-class VilleRepository:
+class VilleOrm:
     """Repository pour la gestion des villes"""
 
     @staticmethod
@@ -67,12 +67,12 @@ class VilleRepository:
         MySQLConnection.execute_update(query, params)
         MySQLConnection.commit()
 
-        return VilleRepository.get_by_geoname_id(ville_data["geoname_id"])
+        return VilleOrm.get_by_geoname_id(ville_data["geoname_id"])
 
     @staticmethod
     def update(geoname_id: int, ville_data: dict) -> Optional[Ville]:
         """Met à jour une ville existante"""
-        existing = VilleRepository.get_by_geoname_id(geoname_id)
+        existing = VilleOrm.get_by_geoname_id(geoname_id)
         if existing is None:
             return None
 
@@ -96,12 +96,12 @@ class VilleRepository:
         MySQLConnection.execute_update(query, tuple(params))
         MySQLConnection.commit()
 
-        return VilleRepository.get_by_geoname_id(geoname_id)
+        return VilleOrm.get_by_geoname_id(geoname_id)
 
     @staticmethod
     def delete(geoname_id: int) -> bool:
         """Supprime une ville"""
-        existing = VilleRepository.get_by_geoname_id(geoname_id)
+        existing = VilleOrm.get_by_geoname_id(geoname_id)
         if existing is None:
             return False
 

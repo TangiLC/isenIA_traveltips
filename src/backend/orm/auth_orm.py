@@ -7,7 +7,7 @@ DDL_UTILISATEURS = """
 """
 
 
-class AuthRepository:
+class AuthOrm:
 
     @staticmethod
     def row_to_user_out(row: Dict[str, Any]) -> Dict[str, Any]:

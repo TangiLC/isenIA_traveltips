@@ -894,7 +894,7 @@ L'API expose les données via une couche repository abstrayant l'accès BDD :
 
 ```python
 # repositories/country_repository.py
-class CountryRepository:
+class CountryOrm:
     def __init__(self, session: Session):
         self.session = session
 

@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from connexion.mysql_connect import MySQLConnection
-from orm.country_orm import CountryRepository
+from orm.country_orm import CountryOrm
 
 
 class CountryService:
@@ -28,7 +28,7 @@ class CountryService:
 
         try:
             MySQLConnection.connect()
-            country = CountryRepository.get_by_alpha2(alpha2)
+            country = CountryOrm.get_by_alpha2(alpha2)
 
             if country is None:
                 raise ValueError(f"Pays '{alpha2}' non trouvé")
@@ -55,7 +55,7 @@ class CountryService:
 
         try:
             MySQLConnection.connect()
-            countries = CountryRepository.get_by_name(name)
+            countries = CountryOrm.get_by_name(name)
 
             if not countries:
                 raise ValueError(f"Aucun pays trouvé avec le nom '{name}'")
@@ -79,7 +79,7 @@ class CountryService:
         """
         try:
             MySQLConnection.connect()
-            results = CountryRepository.get_countries_by_plug_type(plug_type.upper())
+            results = CountryOrm.get_countries_by_plug_type(plug_type.upper())
 
             if not results:
                 raise ValueError(
@@ -103,7 +103,7 @@ class CountryService:
         """
         try:
             MySQLConnection.connect()
-            return CountryRepository.get_all(skip, limit)
+            return CountryOrm.get_all(skip, limit)
         finally:
             MySQLConnection.close()
 
@@ -127,12 +127,12 @@ class CountryService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = CountryRepository.get_by_alpha2(iso2)
+            existing = CountryOrm.get_by_alpha2(iso2)
             if existing:
                 raise ValueError(f"Un pays avec le code '{iso2}' existe déjà")
 
             # Insérer le pays
-            CountryRepository.upsert_pays(
+            CountryOrm.upsert_pays(
                 iso2=iso2,
                 iso3=iso3,
                 name_en=country_data["name_en"],
@@ -144,16 +144,16 @@ class CountryService:
 
             # Insérer les relations
             if country_data.get("langues"):
-                CountryRepository.insert_langues(iso2, country_data["langues"])
+                CountryOrm.insert_langues(iso2, country_data["langues"])
 
             if country_data.get("currencies"):
-                CountryRepository.insert_monnaies(iso2, country_data["currencies"])
+                CountryOrm.insert_monnaies(iso2, country_data["currencies"])
 
             if country_data.get("borders"):
-                CountryRepository.insert_borders(iso2, country_data["borders"])
+                CountryOrm.insert_borders(iso2, country_data["borders"])
 
             if country_data.get("electricity_types"):
-                CountryRepository.insert_electricite(
+                CountryOrm.insert_electricite(
                     iso2,
                     country_data["electricity_types"],
                     country_data.get("voltage", ""),
@@ -163,7 +163,7 @@ class CountryService:
             MySQLConnection.commit()
 
             # Récupérer et retourner le pays créé
-            return CountryRepository.get_by_alpha2(iso2)
+            return CountryOrm.get_by_alpha2(iso2)
         except Exception as e:
             MySQLConnection.rollback()
             raise
@@ -193,7 +193,7 @@ class CountryService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = CountryRepository.get_by_alpha2(iso2)
+            existing = CountryOrm.get_by_alpha2(iso2)
             if not existing:
                 raise ValueError(f"Pays '{iso2}' non trouvé")
 
@@ -205,7 +205,7 @@ class CountryService:
             }
 
             if base_fields:
-                CountryRepository.update_pays(iso2, base_fields)
+                CountryOrm.update_pays(iso2, base_fields)
 
             # Mettre à jour les relations
             if "langues" in update_data:
@@ -213,14 +213,14 @@ class CountryService:
                     "DELETE FROM Pays_Langues WHERE country_iso3166a2 = %s", (iso2,)
                 )
                 if update_data["langues"]:
-                    CountryRepository.insert_langues(iso2, update_data["langues"])
+                    CountryOrm.insert_langues(iso2, update_data["langues"])
 
             if "currencies" in update_data:
                 MySQLConnection.execute_update(
                     "DELETE FROM Pays_Monnaies WHERE country_iso3166a2 = %s", (iso2,)
                 )
                 if update_data["currencies"]:
-                    CountryRepository.insert_monnaies(iso2, update_data["currencies"])
+                    CountryOrm.insert_monnaies(iso2, update_data["currencies"])
 
             if "borders" in update_data:
                 MySQLConnection.execute_update(
@@ -228,7 +228,7 @@ class CountryService:
                     (iso2, iso2),
                 )
                 if update_data["borders"]:
-                    CountryRepository.insert_borders(iso2, update_data["borders"])
+                    CountryOrm.insert_borders(iso2, update_data["borders"])
 
             if "electricity_types" in update_data:
                 MySQLConnection.execute_update(
@@ -237,14 +237,14 @@ class CountryService:
                 if update_data["electricity_types"]:
                     voltage = update_data.get("voltage", "")
                     frequency = update_data.get("frequency", "")
-                    CountryRepository.insert_electricite(
+                    CountryOrm.insert_electricite(
                         iso2, update_data["electricity_types"], voltage, frequency
                     )
 
             MySQLConnection.commit()
 
             # Récupérer et retourner le pays mis à jour
-            return CountryRepository.get_by_alpha2(iso2)
+            return CountryOrm.get_by_alpha2(iso2)
         except Exception as e:
             MySQLConnection.rollback()
             raise
@@ -273,12 +273,12 @@ class CountryService:
             MySQLConnection.connect()
 
             # Vérifier existence et récupérer les infos
-            existing = CountryRepository.get_by_alpha2(iso2)
+            existing = CountryOrm.get_by_alpha2(iso2)
             if not existing:
                 raise ValueError(f"Pays '{iso2}' non trouvé")
 
             # Supprimer le pays
-            success = CountryRepository.delete_pays(iso2)
+            success = CountryOrm.delete_pays(iso2)
 
             if not success:
                 raise ValueError("Erreur lors de la suppression du pays")

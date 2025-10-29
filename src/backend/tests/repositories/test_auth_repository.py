@@ -8,7 +8,7 @@ import pytest
 
 import src.backend.orm.auth_orm as repo
 
-AuthRepository = repo.AuthRepository
+AuthOrm = repo.AuthOrm
 
 
 @pytest.fixture(autouse=True)
@@ -63,7 +63,7 @@ def patch_mysql(monkeypatch, call_log):
 
 def test_row_to_user_out_minimal():
     row = {"id": 1, "pseudo": "alice", "role": "user", "password": "x"}
-    out = AuthRepository.row_to_user_out(row)
+    out = AuthOrm.row_to_user_out(row)
     assert out == {"id": 1, "pseudo": "alice", "role": "user"}
 
 
@@ -76,7 +76,7 @@ def test_get_by_name_found(monkeypatch, call_log):
         repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
 
-    row = AuthRepository.get_by_name("alice")
+    row = AuthOrm.get_by_name("alice")
 
     assert row["id"] == 1
     assert "FROM Utilisateurs" in call_log["execute_query"][0][0]
@@ -84,7 +84,7 @@ def test_get_by_name_found(monkeypatch, call_log):
 
 
 def test_get_by_name_not_found(call_log):
-    row = AuthRepository.get_by_name("nobody")
+    row = AuthOrm.get_by_name("nobody")
     assert row is None
     assert call_log["execute_query"]  # appelé une fois
     q, params = call_log["execute_query"][-1]
@@ -100,7 +100,7 @@ def test_get_by_id_found(monkeypatch, call_log):
         repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
 
-    row = AuthRepository.get_by_id(5)
+    row = AuthOrm.get_by_id(5)
 
     assert row["pseudo"] == "bob"
     assert call_log["execute_query"][-1][1] == (5,)
@@ -123,7 +123,7 @@ def test_create_success(monkeypatch, call_log):
         repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
 
-    new_id = AuthRepository.create("neo", "pwdhash", "user")
+    new_id = AuthOrm.create("neo", "pwdhash", "user")
 
     assert new_id == 42
     assert call_log["commit"] == 1
@@ -145,7 +145,7 @@ def test_create_error_rolls_back(monkeypatch, call_log, patch_db_error):
     )
 
     with pytest.raises(patch_db_error):
-        AuthRepository.create("neo", "pwdhash", "user")
+        AuthOrm.create("neo", "pwdhash", "user")
 
     assert call_log["rollback"] == 1
     assert call_log["commit"] == 0
@@ -160,7 +160,7 @@ def test_update_full_success(monkeypatch, call_log):
         repo.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
-    ok = AuthRepository.update_full(9, "alice", "h", "user")
+    ok = AuthOrm.update_full(9, "alice", "h", "user")
 
     assert ok is True
     assert call_log["commit"] == 1
@@ -180,7 +180,7 @@ def test_update_full_no_row(monkeypatch, call_log):
         repo.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
-    ok = AuthRepository.update_full(9, "alice", "h", "user")
+    ok = AuthOrm.update_full(9, "alice", "h", "user")
 
     assert ok is False
     assert call_log["commit"] == 1
@@ -196,7 +196,7 @@ def test_update_full_error_rolls_back(monkeypatch, call_log, patch_db_error):
     )
 
     with pytest.raises(patch_db_error):
-        AuthRepository.update_full(1, "u", "p", "r")
+        AuthOrm.update_full(1, "u", "p", "r")
 
     assert call_log["rollback"] == 1
     assert call_log["commit"] == 0
@@ -214,7 +214,7 @@ def test_update_partial_builds_dynamic_set(monkeypatch, call_log):
         repo.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
-    ok = AuthRepository.update_partial(12, pseudo="zz", role="admin")
+    ok = AuthOrm.update_partial(12, pseudo="zz", role="admin")
 
     assert ok is True
     assert call_log["commit"] == 1
@@ -231,7 +231,7 @@ def test_update_partial_password_only(monkeypatch, call_log):
         repo.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
-    ok = AuthRepository.update_partial(7, password="h2")
+    ok = AuthOrm.update_partial(7, password="h2")
 
     assert ok is True
     assert call_log["commit"] == 1
@@ -247,7 +247,7 @@ def test_update_partial_no_fields_no_query(monkeypatch, call_log):
 
     monkeypatch.setattr(repo.MySQLConnection, "execute_update", staticmethod(bomb))
 
-    ok = AuthRepository.update_partial(1)
+    ok = AuthOrm.update_partial(1)
 
     assert ok is False
     assert call_log["commit"] == 0
@@ -264,7 +264,7 @@ def test_update_partial_error_rolls_back(monkeypatch, call_log, patch_db_error):
     )
 
     with pytest.raises(patch_db_error):
-        AuthRepository.update_partial(3, role="user")
+        AuthOrm.update_partial(3, role="user")
 
     assert call_log["rollback"] == 1
     assert call_log["commit"] == 0
@@ -279,7 +279,7 @@ def test_delete_success(monkeypatch, call_log):
         repo.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
-    ok = AuthRepository.delete(33)
+    ok = AuthOrm.delete(33)
 
     assert ok is True
     assert call_log["commit"] == 1
@@ -296,7 +296,7 @@ def test_delete_not_found(monkeypatch, call_log):
         repo.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
-    ok = AuthRepository.delete(404)
+    ok = AuthOrm.delete(404)
 
     assert ok is False
     assert call_log["commit"] == 1
@@ -312,7 +312,7 @@ def test_delete_error_rolls_back(monkeypatch, call_log, patch_db_error):
     )
 
     with pytest.raises(patch_db_error):
-        AuthRepository.delete(1)
+        AuthOrm.delete(1)
 
     assert call_log["rollback"] == 1
     assert call_log["commit"] == 0

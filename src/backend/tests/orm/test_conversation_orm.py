@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from bson import ObjectId
 from bson.errors import InvalidId
 
-import src.backend.orm.conversation_orm as repo
+import orm.conversation_orm as repo
 
 COL = repo.ConversationOrm.COLLECTION_NAME
 

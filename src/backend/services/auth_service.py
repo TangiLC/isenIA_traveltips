@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from security.security import Security
-from orm.auth_orm import AuthRepository
+from orm.auth_orm import AuthOrm
 
 
 class AuthService:
@@ -30,7 +30,7 @@ class AuthService:
         Raises:
             ValueError: Si identifiants invalides
         """
-        row = AuthRepository.get_by_name(pseudo)
+        row = AuthOrm.get_by_name(pseudo)
         if not row:
             raise ValueError("Identifiants invalides")
 
@@ -45,7 +45,7 @@ class AuthService:
         }
         token = Security.create_token(claims)
 
-        user_out = AuthRepository.row_to_user_out(row)
+        user_out = AuthOrm.row_to_user_out(row)
         return token, user_out
 
     @staticmethod
@@ -61,10 +61,10 @@ class AuthService:
         Raises:
             ValueError: Si utilisateur non trouvé
         """
-        row = AuthRepository.get_by_name(pseudo)
+        row = AuthOrm.get_by_name(pseudo)
         if not row:
             raise ValueError("Utilisateur introuvable")
-        return AuthRepository.row_to_user_out(row)
+        return AuthOrm.row_to_user_out(row)
 
     @staticmethod
     def create(pseudo: str, password: str, role: str) -> Dict[str, Any]:
@@ -81,14 +81,14 @@ class AuthService:
         Raises:
             ValueError: Si pseudo déjà utilisé
         """
-        existing = AuthRepository.get_by_name(pseudo)
+        existing = AuthOrm.get_by_name(pseudo)
         if existing:
             raise ValueError("Pseudo déjà utilisé")
 
         hashed_password = Security.hash_password(password)
-        new_id = AuthRepository.create(pseudo, hashed_password, role)
-        row = AuthRepository.get_by_id(new_id)
-        return AuthRepository.row_to_user_out(row)
+        new_id = AuthOrm.create(pseudo, hashed_password, role)
+        row = AuthOrm.get_by_id(new_id)
+        return AuthOrm.row_to_user_out(row)
 
     @staticmethod
     def update_partial(
@@ -111,7 +111,7 @@ class AuthService:
         Raises:
             ValueError: Si utilisateur non trouvé
         """
-        current = AuthRepository.get_by_id(user_id)
+        current = AuthOrm.get_by_id(user_id)
         if not current:
             raise ValueError("Utilisateur introuvable")
 
@@ -121,7 +121,7 @@ class AuthService:
             hashed_password = Security.hash_password(password)
 
         # Mise à jour
-        updated = AuthRepository.update_partial(
+        updated = AuthOrm.update_partial(
             user_id,
             pseudo=pseudo,
             password=hashed_password,
@@ -130,11 +130,11 @@ class AuthService:
 
         # Si aucune modification, retourner l'état actuel
         if not updated:
-            return AuthRepository.row_to_user_out(current)
+            return AuthOrm.row_to_user_out(current)
 
         # Récupérer et retourner l'utilisateur mis à jour
-        row = AuthRepository.get_by_id(user_id)
-        return AuthRepository.row_to_user_out(row)
+        row = AuthOrm.get_by_id(user_id)
+        return AuthOrm.row_to_user_out(row)
 
     @staticmethod
     def delete(user_id: int) -> None:
@@ -146,8 +146,8 @@ class AuthService:
         Raises:
             ValueError: Si utilisateur non trouvé
         """
-        current = AuthRepository.get_by_id(user_id)
+        current = AuthOrm.get_by_id(user_id)
         if not current:
             raise ValueError("Utilisateur introuvable")
 
-        AuthRepository.delete(user_id)
+        AuthOrm.delete(user_id)

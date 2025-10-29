@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mongo_connect import MongoDBConnection
-from src.backend.orm.conversation_orm import ConversationRepository
+from src.backend.orm.conversation_orm import ConversationOrm
 
 
 class ConversationETL:
@@ -144,7 +144,7 @@ class ConversationETL:
             # Vider la collection avant l'import
             print(f" Suppression des conversations existantes...")
             collection = MongoDBConnection.get_collection(
-                ConversationRepository.COLLECTION_NAME
+                ConversationOrm.COLLECTION_NAME
             )
             delete_result = collection.delete_many({})
             print(f"{delete_result.deleted_count} documents supprimés")
@@ -153,7 +153,7 @@ class ConversationETL:
             if documents:
                 print(f"📤 Insertion de {len(documents)} conversations...")
                 result = MongoDBConnection.insert_many(
-                    ConversationRepository.COLLECTION_NAME, documents
+                    ConversationOrm.COLLECTION_NAME, documents
                 )
                 print(f"{len(result.inserted_ids)} conversations insérées avec succès")
             else:

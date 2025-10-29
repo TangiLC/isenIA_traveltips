@@ -4,7 +4,7 @@ import unicodedata
 import json
 
 
-class CountryRepository:
+class CountryOrm:
     """Repository pour Pays et tables de liaison"""
 
     # --- UTILITAIRES --------------------------------------------------------
@@ -173,7 +173,7 @@ class CountryRepository:
         Recherche insensible à la casse et aux accents
         Approche en 2 étapes : récupération des codes ISO puis appel à get_by_alpha2()
         """
-        normalized = CountryRepository._normalize_string(name)
+        normalized = CountryOrm._normalize_string(name)
         search_pattern = f"%{normalized}%"
 
         # Étape 1 : Récupérer les codes ISO 3166-1 alpha-2 correspondants
@@ -194,7 +194,7 @@ class CountryRepository:
         # Étape 2 : Récupérer les données complètes pour chaque pays trouvé
         countries = []
         for row in results:
-            country = CountryRepository.get_by_alpha2(row["iso3166a2"])
+            country = CountryOrm.get_by_alpha2(row["iso3166a2"])
             if country:
                 countries.append(country)
 

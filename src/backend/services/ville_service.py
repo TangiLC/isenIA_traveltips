@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from orm.ville_orm import VilleRepository
+from orm.ville_orm import VilleOrm
 from models.ville import Ville
 
 
@@ -19,7 +19,7 @@ class VilleService:
         Raises:
             ValueError: Si ville non trouvée
         """
-        ville = VilleRepository.get_by_geoname_id(geoname_id)
+        ville = VilleOrm.get_by_geoname_id(geoname_id)
         if ville is None:
             raise ValueError("Ville non trouvée")
         return ville
@@ -37,7 +37,7 @@ class VilleService:
         Raises:
             ValueError: Si aucune ville trouvée
         """
-        villes = VilleRepository.get_by_name(name_en)
+        villes = VilleOrm.get_by_name(name_en)
         if not villes:
             raise ValueError("Aucune ville trouvée avec ce nom")
         return villes
@@ -58,7 +58,7 @@ class VilleService:
         if len(country_3166a2) != 2:
             raise ValueError("Le code pays doit contenir exactement 2 caractères")
 
-        villes = VilleRepository.get_by_country(country_3166a2)
+        villes = VilleOrm.get_by_country(country_3166a2)
         if not villes:
             raise ValueError("Aucune ville trouvée pour ce pays")
         return villes
@@ -74,7 +74,7 @@ class VilleService:
         Returns:
             Liste des villes
         """
-        return VilleRepository.get_all(skip, limit)
+        return VilleOrm.get_all(skip, limit)
 
     @staticmethod
     def create(ville_data: Dict[str, Any]) -> Ville:
@@ -89,11 +89,11 @@ class VilleService:
         Raises:
             ValueError: Si une ville avec ce geoname_id existe déjà
         """
-        existing = VilleRepository.get_by_geoname_id(ville_data["geoname_id"])
+        existing = VilleOrm.get_by_geoname_id(ville_data["geoname_id"])
         if existing:
             raise ValueError("Une ville avec ce geoname_id existe déjà")
 
-        return VilleRepository.create(ville_data)
+        return VilleOrm.create(ville_data)
 
     @staticmethod
     def update(geoname_id: int, update_data: Dict[str, Any]) -> Ville:
@@ -109,7 +109,7 @@ class VilleService:
         Raises:
             ValueError: Si ville non trouvée
         """
-        updated = VilleRepository.update(geoname_id, update_data)
+        updated = VilleOrm.update(geoname_id, update_data)
         if updated is None:
             raise ValueError("Ville non trouvée")
         return updated
@@ -124,4 +124,4 @@ class VilleService:
         Returns:
             True si supprimée, False sinon
         """
-        return VilleRepository.delete(geoname_id)
+        return VilleOrm.delete(geoname_id)

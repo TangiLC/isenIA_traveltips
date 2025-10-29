@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.electricity_orm import ElectriciteRepository
+from src.backend.orm.electricity_orm import ElectricityOrm
 from utils.utils import ETLUtils
 
 
@@ -112,7 +112,7 @@ class PlugTypesETL:
                     sock_png = f"{plug_type}_sock.png"
 
                     # Insertion ou remplacement dans la base
-                    rc = ElectriciteRepository.insert_ignore(
+                    rc = ElectricityOrm.insert_ignore(
                         plug_type=plug_type,
                         plug_png=plug_png,
                         sock_png=sock_png,

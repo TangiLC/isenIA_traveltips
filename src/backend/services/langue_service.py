@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from connexion.mysql_connect import MySQLConnection
-from orm.langue_orm import LangueRepository
+from orm.langue_orm import LangueOrm
 
 
 class LangueService:
@@ -21,7 +21,7 @@ class LangueService:
         """
         try:
             MySQLConnection.connect()
-            result = LangueRepository.find_by_iso639_2(code)
+            result = LangueOrm.find_by_iso639_2(code)
 
             if not result:
                 raise ValueError(f"Langue avec le code '{code}' introuvable")
@@ -42,7 +42,7 @@ class LangueService:
         """
         try:
             MySQLConnection.connect()
-            return LangueRepository.find_by_name(name)
+            return LangueOrm.find_by_name(name)
         finally:
             MySQLConnection.close()
 
@@ -58,7 +58,7 @@ class LangueService:
         """
         try:
             MySQLConnection.connect()
-            return LangueRepository.find_by_famille(famille)
+            return LangueOrm.find_by_famille(famille)
         finally:
             MySQLConnection.close()
 
@@ -75,7 +75,7 @@ class LangueService:
         try:
             MySQLConnection.connect()
 
-            rows_affected = LangueRepository.create_or_replace(
+            rows_affected = LangueOrm.create_or_replace(
                 iso639_2=langue_data["iso639_2"],
                 name_en=langue_data["name_en"],
                 name_fr=langue_data["name_fr"],
@@ -110,7 +110,7 @@ class LangueService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = LangueRepository.find_by_iso639_2(iso639_2)
+            existing = LangueOrm.find_by_iso639_2(iso639_2)
             if not existing:
                 raise ValueError(f"Langue avec le code '{iso639_2}' introuvable")
 
@@ -120,7 +120,7 @@ class LangueService:
             if not updates_filtered:
                 raise ValueError("Aucun champ à mettre à jour")
 
-            rows_affected = LangueRepository.update_partial(iso639_2, updates_filtered)
+            rows_affected = LangueOrm.update_partial(iso639_2, updates_filtered)
             MySQLConnection.commit()
             return rows_affected
         except Exception as e:
@@ -146,11 +146,11 @@ class LangueService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = LangueRepository.find_by_iso639_2(iso639_2)
+            existing = LangueOrm.find_by_iso639_2(iso639_2)
             if not existing:
                 raise ValueError(f"Langue avec le code '{iso639_2}' introuvable")
 
-            rows_affected = LangueRepository.delete(iso639_2)
+            rows_affected = LangueOrm.delete(iso639_2)
             MySQLConnection.commit()
             return rows_affected
         except Exception as e:

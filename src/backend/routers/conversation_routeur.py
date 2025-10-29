@@ -5,9 +5,9 @@ from connexion.mongo_connect import MongoDBConnection
 from services.conversation_service import ConversationService
 
 # from connexion.mysql_connect import MySQLConnection
-from orm.conversation_orm import ConversationRepository
+from orm.conversation_orm import ConversationOrm
 
-# from repositories.langue_repository import LangueRepository
+# from repositories.langue_repository import LangueOrm
 from schemas.conversation_dto import (
     ConversationResponse,
     ConversationCreateRequest,
@@ -36,8 +36,8 @@ def get_all_conversations(
     try:
         MongoDBConnection.connect()
 
-        conversations = ConversationRepository.find_all(limit=limit, skip=skip)
-        total = ConversationRepository.count_all()
+        conversations = ConversationOrm.find_all(limit=limit, skip=skip)
+        total = ConversationOrm.count_all()
 
         return ConversationListResponse(
             total=total,
@@ -71,7 +71,7 @@ def get_conversation_by_id(
     try:
         MongoDBConnection.connect()
 
-        conversation = ConversationRepository.find_by_id(conversation_id)
+        conversation = ConversationOrm.find_by_id(conversation_id)
 
         if not conversation:
             raise HTTPException(
@@ -115,7 +115,7 @@ def get_conversations_by_lang(
     try:
         MongoDBConnection.connect()
 
-        conversations = ConversationRepository.find_by_lang(lang_code, limit=limit)
+        conversations = ConversationOrm.find_by_lang(lang_code, limit=limit)
 
         return [ConversationResponse.from_mongo(conv) for conv in conversations]
     except Exception as e:
@@ -193,7 +193,7 @@ def update_conversation(
         MongoDBConnection.connect()
 
         # Vérifier que la conversation existe
-        existing = ConversationRepository.find_by_id(conversation_id)
+        existing = ConversationOrm.find_by_id(conversation_id)
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -219,7 +219,7 @@ def update_conversation(
             )
 
         # Exécuter la mise à jour
-        modified_count = ConversationRepository.update(conversation_id, update_data)
+        modified_count = ConversationOrm.update(conversation_id, update_data)
 
         return {
             "message": f"Conversation '{conversation_id}' mise à jour avec succès",
@@ -269,7 +269,7 @@ def replace_conversation(
         MongoDBConnection.connect()
 
         # Vérifier que la conversation existe
-        existing = ConversationRepository.find_by_id(conversation_id)
+        existing = ConversationOrm.find_by_id(conversation_id)
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -290,7 +290,7 @@ def replace_conversation(
 
         # Remplacer (sans modifier l'_id)
         update_data = {"$set": conversation_data}
-        modified_count = ConversationRepository.update(conversation_id, update_data)
+        modified_count = ConversationOrm.update(conversation_id, update_data)
 
         return {
             "message": f"Conversation '{conversation_id}' remplacée avec succès",
@@ -337,7 +337,7 @@ def delete_conversation(
         MongoDBConnection.connect()
 
         # Vérifier que la conversation existe et récupérer lang639-2
-        existing = ConversationRepository.find_by_id(conversation_id)
+        existing = ConversationOrm.find_by_id(conversation_id)
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

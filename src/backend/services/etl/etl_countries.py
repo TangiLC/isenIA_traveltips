@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.country_orm import CountryRepository
+from src.backend.orm.country_orm import CountryOrm
 from utils.utils import ETLUtils
 
 
@@ -257,7 +257,7 @@ class CountryETL:
         l_lang = l_cur = l_bor = l_elec = 0
         try:
             MySQLConnection.connect()
-            print("\n--- INSERTION DANS MYSQL (via CountryRepository) ---")
+            print("\n--- INSERTION DANS MYSQL (via CountryOrm) ---")
 
             for _, row in df.iterrows():
                 iso2 = (row.get("alpha2") or "").strip().lower()
@@ -272,27 +272,27 @@ class CountryETL:
                 lat_str, lng_str = ETLUtils.parse_lat_lng(row.get("latlng") or "")
 
                 # upsert dans Pays
-                inserted_pays += CountryRepository.upsert_pays(
+                inserted_pays += CountryOrm.upsert_pays(
                     iso2, iso3, name_en, name_fr, name_local, lat_str, lng_str
                 )
 
                 # langues
                 langues = ETLUtils.split_csv_field(row.get("langues") or "")
-                l_lang += CountryRepository.insert_langues(iso2, langues)
+                l_lang += CountryOrm.insert_langues(iso2, langues)
 
                 # monnaies (FK vers Monnaies) – on insère seulement la liaison
                 currencies = ETLUtils.split_csv_field(row.get("currencies") or "")
-                l_cur += CountryRepository.insert_monnaies(iso2, currencies)
+                l_cur += CountryOrm.insert_monnaies(iso2, currencies)
 
                 # frontières avec contrainte de symétrie
                 borders = ETLUtils.split_csv_field(row.get("borders") or "")
-                l_bor += CountryRepository.insert_borders(iso2, borders)
+                l_bor += CountryOrm.insert_borders(iso2, borders)
 
                 # électricité: types 'C,F', plus voltage/frequency
                 plug_types = ETLUtils.split_csv_field(row.get("elec_type") or "")
                 voltage = (row.get("voltage") or "").strip()
                 frequency = (row.get("frequency") or "").strip()
-                l_elec += CountryRepository.insert_electricite(
+                l_elec += CountryOrm.insert_electricite(
                     iso2, plug_types, voltage, frequency
                 )
 

@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from connexion.mysql_connect import MySQLConnection
 
 
-class ElectriciteRepository:
+class ElectricityOrm:
     """Repository pour la gestion des types de prises électriques (table Electricite)"""
 
     @staticmethod
