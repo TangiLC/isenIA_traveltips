@@ -98,5 +98,10 @@ def map_component(country_data: Dict, zoom: int = 5, show_quick: bool = True):
                 if st.button(
                     f"{code} — {name}", key=f"border_{code}", use_container_width=True
                 ):
-                    st.query_params["alpha2"] = code
+                    st.query_params.update(
+                        {
+                            "alpha2": code,
+                            "tab": st.query_params.get("tab", "carte"),
+                        }
+                    )
                     st.rerun()

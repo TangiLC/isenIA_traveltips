@@ -56,9 +56,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Initialiser le session_state pour l'onglet actif
-if "active_tab" not in st.session_state:
-    st.session_state.active_tab = "🗺️ Carte"
+# Récupérer le pays et l'onglet depuis l'URL
+query_params = st.query_params
+alpha2 = query_params.get("alpha2", "FR")
+current_tab = query_params.get("tab", "carte")  # Valeur par défaut : "carte"
+
+# Mapping des noms d'onglets
+TAB_MAPPING = {
+    "carte": 0,
+    "villes": 1,
+    "electricite": 2,
+    "langues": 3,
+    "monnaies": 4,
+}
 
 # Sidebar
 with st.sidebar:
@@ -81,17 +91,17 @@ with st.sidebar:
                     with st.expander(
                         f"{country.get('name_fr', country.get('name_en', 'N/A'))} ({country.get('iso3166a2', 'N/A')})"
                     ):
-                        # col1, col2, col3 = st.columns(3)
-
-                        # with col1:
                         st.write(f"**Code ISO:** {country.get('iso3166a2', 'N/A')}")
-                        # with col2:
                         st.write(f"**Nom anglais:** {country.get('name_en', 'N/A')}")
-                        # with col3:
                         if st.button(
                             "Voir détails", key=f"view_{country.get('iso3166a2')}"
                         ):
-                            st.query_params["alpha2"] = country.get("iso3166a2")
+                            st.query_params.update(
+                                {
+                                    "alpha2": country.get("iso3166a2"),
+                                    "tab": current_tab,  # Conserver l'onglet actuel
+                                }
+                            )
                             st.rerun()
             else:
                 st.info("Aucun pays trouvé")
@@ -99,18 +109,6 @@ with st.sidebar:
 # En-tête
 st.title(f"{PAGES_CONFIG['pays']['icon']} {PAGES_CONFIG['pays']['title']}")
 st.markdown("---")
-
-# Récupérer le pays depuis l'URL
-query_params = st.query_params
-alpha2 = query_params.get("alpha2", "FR")
-
-# Détecter si le pays a changé pour réinitialiser l'onglet
-if "previous_country" not in st.session_state:
-    st.session_state.previous_country = alpha2
-elif st.session_state.previous_country != alpha2:
-    st.session_state.active_tab = "🗺️ Carte"
-    st.session_state.previous_country = alpha2
-
 
 # Affichage du pays sélectionné
 st.subheader(f"Détails : {alpha2}")
@@ -160,55 +158,51 @@ with st.spinner("Chargement des données..."):
             "💰 Monnaies",
         ]
 
-        # Trouver l'index de l'onglet actif
-        default_index = 0
-        if st.session_state.active_tab in tab_names:
-            default_index = tab_names.index(st.session_state.active_tab)
+        # Déterminer l'onglet par défaut depuis l'URL
+        default_index = TAB_MAPPING.get(current_tab, 0)
 
-        # Créer les onglets avec l'onglet par défaut
-        selected_tab = st.tabs(tab_names)
+        # Créer les onglets
+        tabs = st.tabs(tab_names)
 
-        # Mettre à jour l'onglet actif quand l'utilisateur clique
-        # Note: Streamlit ne permet pas de détecter directement le clic sur un onglet
-        # On utilise donc des boutons radio invisibles pour simuler ce comportement
+        # Fonction helper pour mettre à jour l'URL
+        def update_tab_in_url(tab_key: str):
+            """Met à jour le paramètre 'tab' dans l'URL sans rerun"""
+            st.query_params.update({"alpha2": alpha2, "tab": tab_key})
 
-        # Alternative: utiliser un selectbox pour choisir la section
-        # Mais pour garder les tabs visuels, on garde cette approche
-
-        with selected_tab[0]:
+        with tabs[0]:
             from components.map import map_component
 
             map_component(country_data)
-            if st.session_state.active_tab != tab_names[0]:
-                st.session_state.active_tab = tab_names[0]
+            if current_tab != "carte":
+                update_tab_in_url("carte")
 
-        with selected_tab[1]:
+        with tabs[1]:
             from components.ville import ville_component
 
             ville_component(country_data)
-            if st.session_state.active_tab != tab_names[1]:
-                st.session_state.active_tab = tab_names[1]
+            if current_tab != "villes":
+                update_tab_in_url("villes")
 
-        with selected_tab[2]:
+        with tabs[2]:
             from components.elec import elec_component
 
             elec_component(country_data)
-            if st.session_state.active_tab != tab_names[2]:
-                st.session_state.active_tab = tab_names[2]
+            if current_tab != "electricite":
+                update_tab_in_url("electricite")
 
-        with selected_tab[3]:
+        with tabs[3]:
             from components.langue import langue_component
 
             langue_component(country_data)
-            if st.session_state.active_tab != tab_names[3]:
-                st.session_state.active_tab = tab_names[3]
+            if current_tab != "langues":
+                update_tab_in_url("langues")
 
-        with selected_tab[4]:
+        with tabs[4]:
             from components.monnaie import monnaie_component
 
             monnaie_component(country_data)
-            if st.session_state.active_tab != tab_names[4]:
-                st.session_state.active_tab = tab_names[4]
+            if current_tab != "monnaies":
+                update_tab_in_url("monnaies")
 
         # Raccourci
         st.caption("Raccourcis")
@@ -219,7 +213,12 @@ with st.spinner("Chargement des données..."):
         for i, code in enumerate(quick_countries):
             with cols[i]:
                 if st.button(code, key=f"footer_{code}", use_container_width=True):
-                    st.query_params["alpha2"] = code
+                    st.query_params.update(
+                        {
+                            "alpha2": code,
+                            "tab": current_tab,  # Conserver l'onglet actuel
+                        }
+                    )
                     st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)

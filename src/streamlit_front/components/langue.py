@@ -31,6 +31,10 @@ def langue_component(country_data: Dict):
 
     st.subheader(f"💬 Langues ({len(langues)})")
 
+    # Initialiser le state pour gérer l'affichage des conversations
+    if "loaded_conversations" not in st.session_state:
+        st.session_state.loaded_conversations = set()
+
     for langue in langues:
         iso639_2 = langue.get("iso639_2", "N/A")
         name_fr = langue.get("name_fr", "N/A")
@@ -59,17 +63,38 @@ def langue_component(country_data: Dict):
             # Section conversations
             st.markdown("---")
             st.write("**📚 Conversations disponibles**")
+
             if is_in_mongo:
-                if st.button(
-                    f"Charger les conversations en {name_fr}",
-                    key=f"conv_{iso639_2}",
-                    use_container_width=True,
-                ):
+                # Vérifier si les conversations sont déjà chargées
+                is_loaded = iso639_2 in st.session_state.loaded_conversations
+
+                col_btn1, col_btn2 = st.columns([1, 1])
+
+                with col_btn1:
+                    if not is_loaded:
+                        if st.button(
+                            f"Charger les conversations en {name_fr}",
+                            key=f"load_conv_{iso639_2}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.loaded_conversations.add(iso639_2)
+                            st.rerun()
+                    else:
+                        if st.button(
+                            f"Masquer les conversations",
+                            key=f"hide_conv_{iso639_2}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.loaded_conversations.discard(iso639_2)
+                            st.rerun()
+
+                # Afficher les conversations si chargées
+                if is_loaded:
                     with st.spinner(f"Chargement des conversations en {name_fr}..."):
                         conversations = api_client.get_conversations_by_lang(iso639_2)
 
                         if conversations:
-                            st.success("✅ Conversations trouvée")
+                            st.success("✅ Conversations trouvées")
 
                             conversation = conversations[0]
                             sentences = conversation.get("sentences", {})
@@ -126,6 +151,7 @@ def langue_component(country_data: Dict):
                                 st.write(
                                     f"*Batterie* : {sentences.get('BATTERY', '—')}"
                                 )
-
+                        else:
+                            st.warning(f"Aucune conversation trouvée en {name_fr}")
             else:
                 st.warning(f"Aucune conversation disponible en {name_fr}")

@@ -117,7 +117,12 @@ def elec_component(country_data: Dict):
                         key=f"country_{plug_type}_{code}",
                         use_container_width=True,
                     ):
-                        st.query_params["alpha2"] = code
+                        st.query_params.update(
+                            {
+                                "alpha2": code,
+                                "tab": st.query_params.get("tab", "electricite"),
+                            }
+                        )
                         st.rerun()
     # Information additionnelle
     st.markdown("---")

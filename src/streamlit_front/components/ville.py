@@ -8,7 +8,6 @@ import os
 import pandas as pd
 import pydeck as pdk
 import altair as alt
-from datetime import timedelta
 
 # Ajouter le dossier parent au path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -192,13 +191,14 @@ def ville_component(country_data: Dict):
         st.info("Aucune ville disponible pour ce pays")
         return
 
-    # État persistant pour laisser plusieurs graphes ouverts
-    if "open_meteo" not in st.session_state:
-        st.session_state.open_meteo = set()
+    # État persistant pour les données météo et leur affichage
     if "meteo_cache" not in st.session_state:
         st.session_state.meteo_cache = {}
+    if "meteo_visible" not in st.session_state:
+        st.session_state.meteo_visible = set()
 
     def get_meteo_cached(geoname_id: int):
+        """Charge les données météo une seule fois et les garde en cache"""
         if geoname_id not in st.session_state.meteo_cache:
             with st.spinner("Chargement météo..."):
                 st.session_state.meteo_cache[geoname_id] = (
@@ -211,7 +211,10 @@ def ville_component(country_data: Dict):
         geoname_id = city.get("geoname_id")
         tag = "🏢" if is_capital else ""
         bold = "**" if is_capital else ""
-        expanded = bool(geoname_id in st.session_state.open_meteo)
+
+        # L'expander reste toujours ouvert s'il y a des données météo chargées
+        has_meteo_data = geoname_id in st.session_state.meteo_cache
+        expanded = has_meteo_data
 
         with st.expander(f"{bold}{name}{bold} {tag}", expanded=expanded):
             col1, col2 = st.columns(2)
@@ -227,19 +230,24 @@ def ville_component(country_data: Dict):
                     c1, c2, c3 = st.columns(3)
                     with c1:
                         if st.button("⛅ Voir météo", key=f"open_{geoname_id}"):
-                            st.session_state.open_meteo.add(geoname_id)
-                            st.rerun()
+                            # Charger les données ET les rendre visibles
+                            get_meteo_cached(geoname_id)
+                            st.session_state.meteo_visible.add(geoname_id)
                     with c2:
-                        if st.button("Fermer", key=f"close_{geoname_id}"):
-                            st.session_state.open_meteo.discard(geoname_id)
-                            st.rerun()
+                        if st.button("🔽 Fermer", key=f"close_{geoname_id}"):
+                            # Masquer le graphique (mais garder les données en cache)
+                            st.session_state.meteo_visible.discard(geoname_id)
                     with c3:
-                        st.write("Weather data by **Open-Meteo.com**")
+                        st.caption("by Open-Meteo.com")
 
             with col2:
-                if geoname_id and geoname_id in st.session_state.open_meteo:
-                    meteo_data = get_meteo_cached(geoname_id)
-                    render_meteo_timeline(meteo_data)
+                # Afficher la météo SI elle est visible
+                if geoname_id and geoname_id in st.session_state.meteo_visible:
+                    meteo_data = st.session_state.meteo_cache.get(geoname_id)
+                    if meteo_data:
+                        render_meteo_timeline(meteo_data)
+                    else:
+                        st.warning("Données météo non disponibles")
 
     st.subheader(f"Villes ({len(cities)})")
 
