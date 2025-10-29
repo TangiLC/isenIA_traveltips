@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.electricity_orm import ElectricityOrm
+from orm.electricity_orm import ElectricityOrm
 from utils.utils import ETLUtils
 
 
@@ -96,7 +96,7 @@ class PlugTypesETL:
         # 2. Insertion dans MySQL via le Repository
         try:
             MySQLConnection.connect()
-            print("\n--- INSERTION DANS MYSQL (via Repository) ---")
+            print("\n--- INSERTION DANS MYSQL (via Orm) ---")
 
             inserted_count = 0
             error_count = 0
@@ -105,7 +105,7 @@ class PlugTypesETL:
                 try:
                     # Extraction du type de prise depuis le titre (ex: "Plug type A" -> "A")
                     title = row.get("Title", "")
-                    plug_type = self._suffix_from_title(title)
+                    plug_type = ETLUtils.suffix_from_title(title)
 
                     # Nom des fichiers images
                     plug_png = f"{plug_type}_plug.png"

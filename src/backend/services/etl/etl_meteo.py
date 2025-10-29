@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from models.week_meteo import WeekMeteo
-from src.backend.orm.week_meteo_orm import WeekMeteoOrm
+from orm.week_meteo_orm import WeekMeteoOrm
 from utils.utils import ETLUtils
 
 

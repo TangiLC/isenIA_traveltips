@@ -6,7 +6,7 @@ import types
 import builtins
 import pytest
 
-import src.backend.orm.auth_orm as repo
+import orm.auth_orm as repo
 
 AuthOrm = repo.AuthOrm
 

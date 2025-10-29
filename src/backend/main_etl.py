@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple
 
-from src.backend.services.etl import (
+from services.etl import (
     elec_scrap2,
     etl_conversations,
     etl_countries,
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 # Import des ETL
-from src.backend.services.etl import (
+from services.etl import (
     etl_villes,
 )
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.country_orm import CountryOrm
+from orm.country_orm import CountryOrm
 from utils.utils import ETLUtils
 
 

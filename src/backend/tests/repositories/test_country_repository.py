@@ -1,5 +1,5 @@
 import pytest
-import src.backend.orm.country_orm as repo
+import orm.country_orm as repo
 
 CountryOrm = repo.CountryOrm
 

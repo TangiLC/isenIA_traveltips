@@ -6,8 +6,8 @@ from pathlib import Path
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
 from connexion.mongo_connect import MongoDBConnection
-from orm.langue_repository import LangueOrm
-from src.backend.orm.conversation_orm import ConversationOrm
+from orm.langue_orm import LangueOrm
+from orm.conversation_orm import ConversationOrm
 
 
 class LanguageETL:
@@ -15,7 +15,7 @@ class LanguageETL:
 
     def __init__(self):
         """Initialisation des chemins de fichiers"""
-        self.base_dir = Path(__file__).resolve().parents[5]
+        self.base_dir = Path(__file__).resolve().parents[4]
         self.iso1_path = self.base_dir / "raw_sources" / "iso_639-1.csv"
         self.iso2_path = self.base_dir / "raw_sources" / "iso_639-2.csv"
         self.output_path = self.base_dir / "src" / "db" / "iso_languages.csv"
@@ -264,7 +264,7 @@ class LanguageETL:
         # 2. Insertion dans MySQL via le Repository
         try:
             MySQLConnection.connect()
-            print("\n--- INSERTION DANS MYSQL (via Repository) ---")
+            print("\n--- INSERTION DANS MYSQL (via Orm) ---")
 
             inserted_count = 0
             error_count = 0

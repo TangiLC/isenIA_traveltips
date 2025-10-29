@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, Path(__file__).resolve().parents[2])
 
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.currency_orm import CurrencyOrm
+from orm.currency_orm import CurrencyOrm
 from utils.utils import ETLUtils
 
 
@@ -198,7 +198,7 @@ class CurrencyETL:
         # 2. Insertion dans MySQL via le Repository
         try:
             MySQLConnection.connect()
-            print("\n--- INSERTION DANS MYSQL (via Repository) ---")
+            print("\n--- INSERTION DANS MYSQL (via Orm) ---")
 
             inserted_count = 0
             error_count = 0

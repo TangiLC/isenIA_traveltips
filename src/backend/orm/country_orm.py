@@ -273,37 +273,43 @@ class CountryOrm:
 
     # --- LANGUES ------------------------------------------------------------
     @staticmethod
-    def insert_langues(country_iso2: str, iso639_list: Iterable[str]) -> int:
+    def insert_langues(country_iso2: str, iso639_list: Iterable[Optional[str]]) -> int:
         rows: List[Tuple[str, str]] = []
-        for code in iso639_list:
-            code = code.strip()
+        iso2 = country_iso2.strip().lower()
+        for code in iso639_list or []:
             if not code:
                 continue
-            rows.append((country_iso2, code))
+            code = code.strip().lower()
+            if not code:
+                continue
+            rows.append((iso2, code))
         if not rows:
             return 0
-        query = """
-            INSERT IGNORE INTO Pays_Langues (country_iso3166a2, iso639_2)
-            VALUES (%s, %s)
-        """
-        return MySQLConnection.execute_update(query, rows)
+        return MySQLConnection.execute_update(
+            "INSERT INTO Pays_Langues (country_3166a2, iso639_2) VALUES (%s, %s)",
+            rows,
+        )
 
-    # --- MONNAIES -----------------------------------------------------------
+    # --- MONNAIES ------------------------------------------------------------
     @staticmethod
-    def insert_monnaies(country_iso2: str, iso4217_list: Iterable[str]) -> int:
+    def insert_monnaies(
+        country_iso2: str, iso4217_list: Iterable[Optional[str]]
+    ) -> int:
         rows: List[Tuple[str, str]] = []
-        for code in iso4217_list:
+        iso2 = country_iso2.strip().lower()
+        for code in iso4217_list or []:
+            if not code:
+                continue
             code = code.strip().upper()
             if not code:
                 continue
-            rows.append((country_iso2, code))
+            rows.append((iso2, code))
         if not rows:
             return 0
-        query = """
-            INSERT IGNORE INTO Pays_Monnaies (country_iso3166a2, currency_iso4217)
-            VALUES (%s, %s)
-        """
-        return MySQLConnection.execute_update(query, rows)
+        return MySQLConnection.execute_update(
+            "INSERT INTO Pays_Monnaies (country_3166a2, iso4217) VALUES (%s, %s)",
+            rows,
+        )
 
     # --- FRONTIÈRES ---------------------------------------------------------
     @staticmethod
