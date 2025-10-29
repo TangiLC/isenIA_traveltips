@@ -1,14 +1,8 @@
-# test_auth_repository.py
-# pytest -q
-# Prérequis conseillés : pip install pytest pytest-mock
-
-import types
-import builtins
 import pytest
 
-import orm.auth_orm as repo
+import orm.auth_orm as orm
 
-AuthOrm = repo.AuthOrm
+AuthOrm = orm.AuthOrm
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +15,7 @@ def patch_db_error(monkeypatch):
     class DBError(Exception):
         pass
 
-    monkeypatch.setattr(repo, "Error", DBError)
+    monkeypatch.setattr(orm, "Error", DBError)
     return DBError
 
 
@@ -52,13 +46,13 @@ def patch_mysql(monkeypatch, call_log):
         call_log["rollback"] += 1
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
+        orm.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_execute_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_execute_update)
     )
-    monkeypatch.setattr(repo.MySQLConnection, "commit", staticmethod(fake_commit))
-    monkeypatch.setattr(repo.MySQLConnection, "rollback", staticmethod(fake_rollback))
+    monkeypatch.setattr(orm.MySQLConnection, "commit", staticmethod(fake_commit))
+    monkeypatch.setattr(orm.MySQLConnection, "rollback", staticmethod(fake_rollback))
 
 
 def test_row_to_user_out_minimal():
@@ -73,7 +67,7 @@ def test_get_by_name_found(monkeypatch, call_log):
         return [{"id": 1, "pseudo": "alice", "password": "hash", "role": "user"}]
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
+        orm.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
 
     row = AuthOrm.get_by_name("alice")
@@ -97,7 +91,7 @@ def test_get_by_id_found(monkeypatch, call_log):
         return [{"id": 5, "pseudo": "bob", "password": "hash", "role": "admin"}]
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
+        orm.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
 
     row = AuthOrm.get_by_id(5)
@@ -117,10 +111,10 @@ def test_create_success(monkeypatch, call_log):
         return [{"id": 42}]
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_execute_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_execute_update)
     )
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
+        orm.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
 
     new_id = AuthOrm.create("neo", "pwdhash", "user")
@@ -141,7 +135,7 @@ def test_create_error_rolls_back(monkeypatch, call_log, patch_db_error):
         raise patch_db_error("boom")
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(failing_update)
+        orm.MySQLConnection, "execute_update", staticmethod(failing_update)
     )
 
     with pytest.raises(patch_db_error):
@@ -157,7 +151,7 @@ def test_update_full_success(monkeypatch, call_log):
         return 1  # 1 ligne affectée
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
     ok = AuthOrm.update_full(9, "alice", "h", "user")
@@ -177,7 +171,7 @@ def test_update_full_no_row(monkeypatch, call_log):
         return 0  # aucune ligne affectée
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
     ok = AuthOrm.update_full(9, "alice", "h", "user")
@@ -192,7 +186,7 @@ def test_update_full_error_rolls_back(monkeypatch, call_log, patch_db_error):
         raise patch_db_error("db down")
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(failing_update)
+        orm.MySQLConnection, "execute_update", staticmethod(failing_update)
     )
 
     with pytest.raises(patch_db_error):
@@ -211,7 +205,7 @@ def test_update_partial_builds_dynamic_set(monkeypatch, call_log):
         return 1
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
     ok = AuthOrm.update_partial(12, pseudo="zz", role="admin")
@@ -228,7 +222,7 @@ def test_update_partial_password_only(monkeypatch, call_log):
         return 1
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
     ok = AuthOrm.update_partial(7, password="h2")
@@ -245,7 +239,7 @@ def test_update_partial_no_fields_no_query(monkeypatch, call_log):
     def bomb(*args, **kwargs):
         raise AssertionError("execute_update ne devrait pas être appelé")
 
-    monkeypatch.setattr(repo.MySQLConnection, "execute_update", staticmethod(bomb))
+    monkeypatch.setattr(orm.MySQLConnection, "execute_update", staticmethod(bomb))
 
     ok = AuthOrm.update_partial(1)
 
@@ -260,7 +254,7 @@ def test_update_partial_error_rolls_back(monkeypatch, call_log, patch_db_error):
         raise patch_db_error("oops")
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(failing_update)
+        orm.MySQLConnection, "execute_update", staticmethod(failing_update)
     )
 
     with pytest.raises(patch_db_error):
@@ -276,7 +270,7 @@ def test_delete_success(monkeypatch, call_log):
         return 1
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
     ok = AuthOrm.delete(33)
@@ -293,7 +287,7 @@ def test_delete_not_found(monkeypatch, call_log):
         return 0
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_update)
     )
 
     ok = AuthOrm.delete(404)
@@ -308,7 +302,7 @@ def test_delete_error_rolls_back(monkeypatch, call_log, patch_db_error):
         raise patch_db_error("nope")
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(failing_update)
+        orm.MySQLConnection, "execute_update", staticmethod(failing_update)
     )
 
     with pytest.raises(patch_db_error):

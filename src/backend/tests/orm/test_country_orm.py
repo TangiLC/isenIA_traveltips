@@ -1,7 +1,8 @@
 import pytest
-import src.backend.orm.country_orm as repo
 
-CountryOrm = repo.CountryOrm
+import orm.country_orm as orm
+
+CountryOrm = orm.CountryOrm
 
 
 @pytest.fixture
@@ -217,10 +218,10 @@ def patch_mysql(monkeypatch, call_log):
         return 1
 
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
+        orm.MySQLConnection, "execute_query", staticmethod(fake_execute_query)
     )
     monkeypatch.setattr(
-        repo.MySQLConnection, "execute_update", staticmethod(fake_execute_update)
+        orm.MySQLConnection, "execute_update", staticmethod(fake_execute_update)
     )
 
 
@@ -248,9 +249,7 @@ def test_get_by_alpha2_not_found(monkeypatch):
             return []
         return []
 
-    monkeypatch.setattr(
-        repo.MySQLConnection, "execute_query", staticmethod(empty_query)
-    )
+    monkeypatch.setattr(orm.MySQLConnection, "execute_query", staticmethod(empty_query))
     assert CountryOrm.get_by_alpha2("zz") is None
 
 
