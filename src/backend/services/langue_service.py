@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from connexion.mysql_connect import MySQLConnection
-from repositories.langue_repository import LangueRepository
+from orm.langue_orm import LangueRepository
 
 
 class LangueService:

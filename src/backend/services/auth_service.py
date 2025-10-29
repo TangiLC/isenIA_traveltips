@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from security.security import Security
-from repositories.auth_repository import AuthRepository
+from orm.auth_orm import AuthRepository
 
 
 class AuthService:

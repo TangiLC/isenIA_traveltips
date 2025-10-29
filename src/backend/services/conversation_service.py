@@ -1,7 +1,7 @@
 from typing import Dict, Any, Tuple
 from connexion.mysql_connect import MySQLConnection
-from repositories.conversation_repository import ConversationRepository
-from repositories.langue_repository import LangueRepository
+from orm.conversation_orm import ConversationRepository
+from orm.langue_orm import LangueRepository
 
 
 class ConversationService:

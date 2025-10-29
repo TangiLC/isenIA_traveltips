@@ -5,7 +5,7 @@ from connexion.mongo_connect import MongoDBConnection
 from services.conversation_service import ConversationService
 
 # from connexion.mysql_connect import MySQLConnection
-from repositories.conversation_repository import ConversationRepository
+from orm.conversation_orm import ConversationRepository
 
 # from repositories.langue_repository import LangueRepository
 from schemas.conversation_dto import (

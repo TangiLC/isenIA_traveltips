@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mongo_connect import MongoDBConnection
-from repositories.conversation_repository import ConversationRepository
+from src.backend.orm.conversation_orm import ConversationRepository
 
 
 class ConversationETL:

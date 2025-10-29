@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from connexion.mysql_connect import MySQLConnection
-from repositories.electricity_repository import ElectriciteRepository
+from orm.electricity_orm import ElectriciteRepository
 
 
 class ElectricityService:

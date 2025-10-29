@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from repositories.ville_repository import VilleRepository
+from orm.ville_orm import VilleRepository
 from models.ville import Ville
 
 

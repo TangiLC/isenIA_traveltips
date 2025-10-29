@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from repositories.electricity_repository import ElectriciteRepository
+from src.backend.orm.electricity_orm import ElectriciteRepository
 from utils.utils import ETLUtils
 
 

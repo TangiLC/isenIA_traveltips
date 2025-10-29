@@ -1,6 +1,6 @@
 from datetime import date
 from typing import List, Optional
-from repositories.week_meteo_repository import WeekMeteoRepository
+from orm.week_meteo_orm import WeekMeteoRepository
 from models.week_meteo import WeekMeteo
 
 

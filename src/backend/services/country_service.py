@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from connexion.mysql_connect import MySQLConnection
-from repositories.country_repository import CountryRepository
+from orm.country_orm import CountryRepository
 
 
 class CountryService:

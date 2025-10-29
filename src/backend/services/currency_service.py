@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from connexion.mysql_connect import MySQLConnection
-from repositories.currency_repository import CurrencyRepository
+from orm.currency_orm import CurrencyRepository
 
 
 class CurrencyService:

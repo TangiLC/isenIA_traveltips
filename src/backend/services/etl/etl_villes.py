@@ -9,7 +9,7 @@ import time
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from repositories.ville_repository import VilleRepository
+from src.backend.orm.ville_orm import VilleRepository
 from utils.utils import ETLUtils
 
 
