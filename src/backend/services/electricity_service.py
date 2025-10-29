@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from connexion.mysql_connect import MySQLConnection
-from orm.electricity_orm import ElectriciteRepository
+from orm.electricity_orm import ElectricityOrm
 
 
 class ElectricityService:
@@ -15,7 +15,7 @@ class ElectricityService:
         """
         try:
             MySQLConnection.connect()
-            return ElectriciteRepository.find_all()
+            return ElectricityOrm.find_all()
         finally:
             MySQLConnection.close()
 
@@ -34,7 +34,7 @@ class ElectricityService:
         """
         try:
             MySQLConnection.connect()
-            result = ElectriciteRepository.find_by_plug_type(plug_type.upper())
+            result = ElectricityOrm.find_by_plug_type(plug_type.upper())
 
             if not result:
                 raise ValueError(f"Type de prise '{plug_type}' introuvable")
@@ -56,7 +56,7 @@ class ElectricityService:
         try:
             MySQLConnection.connect()
 
-            rows = ElectriciteRepository.create_or_replace(
+            rows = ElectricityOrm.create_or_replace(
                 plug_type=plug_data["plug_type"].upper(),
                 plug_png=plug_data["plug_png"],
                 sock_png=plug_data["sock_png"],
@@ -88,7 +88,7 @@ class ElectricityService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = ElectriciteRepository.find_by_plug_type(plug_type.upper())
+            existing = ElectricityOrm.find_by_plug_type(plug_type.upper())
             if not existing:
                 raise ValueError(f"Type de prise '{plug_type}' introuvable")
 
@@ -98,9 +98,7 @@ class ElectricityService:
             if not updates_filtered:
                 raise ValueError("Aucun champ à mettre à jour")
 
-            rows = ElectriciteRepository.update_partial(
-                plug_type.upper(), updates_filtered
-            )
+            rows = ElectricityOrm.update_partial(plug_type.upper(), updates_filtered)
             MySQLConnection.commit()
             return rows
         except Exception as e:
@@ -126,11 +124,11 @@ class ElectricityService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = ElectriciteRepository.find_by_plug_type(plug_type.upper())
+            existing = ElectricityOrm.find_by_plug_type(plug_type.upper())
             if not existing:
                 raise ValueError(f"Type de prise '{plug_type}' introuvable")
 
-            rows = ElectriciteRepository.delete(plug_type.upper())
+            rows = ElectricityOrm.delete(plug_type.upper())
             MySQLConnection.commit()
             return rows
         except Exception as e:

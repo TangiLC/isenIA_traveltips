@@ -11,7 +11,7 @@ COL = repo.ConversationOrm.COLLECTION_NAME
 @pytest.fixture(autouse=True)
 def patch_mongo(monkeypatch):
     """
-    Remplace toutes les méthodes de MongoDBConnection utilisées par ConversationRepository
+    Remplace toutes les méthodes de MongoDBConnection utilisées par ConversationOrm
     par des fakes contrôlables.
     """
     calls = {}
@@ -137,25 +137,25 @@ def patch_mongo(monkeypatch):
 def test_find_by_id_valid(patch_mongo):
     # create a valid ObjectId string
     oid = str(ObjectId())
-    res = repo.ConversationRepository.find_by_id(oid)
+    res = repo.ConversationOrm.find_by_id(oid)
     assert res is not None
     assert res.get("title") == "hello"
 
 
 def test_find_by_id_invalid_returns_none(patch_mongo):
     # invalid ObjectId string should be caught and return None
-    res = repo.ConversationRepository.find_by_id("not_an_oid")
+    res = repo.ConversationOrm.find_by_id("not_an_oid")
     assert res is None
 
 
 def test_find_all_uses_get_collection_and_pagination(patch_mongo):
-    out = repo.ConversationRepository.find_all(limit=2, skip=1)
+    out = repo.ConversationOrm.find_all(limit=2, skip=1)
     assert isinstance(out, list)
     assert len(out) == 2 or len(out) <= 2  # ensure limit honored at most 2
 
 
 def test_find_by_lang_lowercases(patch_mongo):
-    res = repo.ConversationRepository.find_by_lang("EN", limit=5)
+    res = repo.ConversationOrm.find_by_lang("EN", limit=5)
     # fake_find compares exact value so repository lowercases before calling
     assert isinstance(res, list)
     # results should be filtered to lang 'en' only
@@ -165,7 +165,7 @@ def test_find_by_lang_lowercases(patch_mongo):
 
 def test_create_returns_string_id(patch_mongo):
     payload = {"title": "new"}
-    new_id = repo.ConversationRepository.create(payload)
+    new_id = repo.ConversationOrm.create(payload)
     assert isinstance(new_id, str)
     # ensure returned id can be parsed into ObjectId
     ObjectId(new_id)
@@ -173,40 +173,40 @@ def test_create_returns_string_id(patch_mongo):
 
 def test_update_valid_id_returns_modified_count(patch_mongo):
     oid = str(ObjectId())
-    modified = repo.ConversationRepository.update(oid, {"$set": {"title": "x"}})
+    modified = repo.ConversationOrm.update(oid, {"$set": {"title": "x"}})
     assert isinstance(modified, int)
     assert modified == 1
 
 
 def test_update_invalid_id_returns_zero(patch_mongo):
-    modified = repo.ConversationRepository.update("bad-id", {"$set": {"title": "x"}})
+    modified = repo.ConversationOrm.update("bad-id", {"$set": {"title": "x"}})
     assert modified == 0
 
 
 def test_delete_valid_id_returns_deleted_count(patch_mongo):
     oid = str(ObjectId())
-    deleted = repo.ConversationRepository.delete(oid)
+    deleted = repo.ConversationOrm.delete(oid)
     assert deleted == 1
 
 
 def test_delete_invalid_id_returns_zero(patch_mongo):
-    deleted = repo.ConversationRepository.delete("bad-id")
+    deleted = repo.ConversationOrm.delete("bad-id")
     assert deleted == 0
 
 
 def test_count_all_and_by_lang(patch_mongo):
-    total = repo.ConversationRepository.count_all()
-    by_lang = repo.ConversationRepository.count_by_lang("EN")
+    total = repo.ConversationOrm.count_all()
+    by_lang = repo.ConversationOrm.count_by_lang("EN")
     assert isinstance(total, int) and total == 123
     assert isinstance(by_lang, int) and by_lang == 42
 
 
 def test_search_by_field(patch_mongo):
-    results = repo.ConversationRepository.search_by_field("title", "a", limit=5)
+    results = repo.ConversationOrm.search_by_field("title", "a", limit=5)
     assert isinstance(results, list)
 
 
 def test_aggregate_by_lang(patch_mongo):
-    agg = repo.ConversationRepository.aggregate_by_lang()
+    agg = repo.ConversationOrm.aggregate_by_lang()
     assert isinstance(agg, list)
     assert agg and "lang_code" in agg[0] and "count" in agg[0]

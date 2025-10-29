@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, Path(__file__).resolve().parents[2])
 
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.currency_orm import CurrencyRepository
+from src.backend.orm.currency_orm import CurrencyOrm
 from utils.utils import ETLUtils
 
 
@@ -214,7 +214,7 @@ class CurrencyETL:
                         # Pas de code ISO 4217 -> on ignore proprement
                         continue
 
-                    rc = CurrencyRepository.insert_ignore(
+                    rc = CurrencyOrm.insert_ignore(
                         iso4217=code,
                         name=name if name and name != "-" else code,
                         symbol=symbol if symbol and symbol != "-" else "",

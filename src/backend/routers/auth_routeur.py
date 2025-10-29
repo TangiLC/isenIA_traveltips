@@ -5,7 +5,7 @@ from services.auth_service import AuthService
 from security.security import Security
 from models.auth import UserIn, UserPatch, UserOut, TokenResponse, LoginIn
 
-# from repositories.auth_repository import AuthRepository
+# from repositories.auth_repository import AuthOrm
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 

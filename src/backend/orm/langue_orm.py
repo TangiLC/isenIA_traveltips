@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from connexion.mysql_connect import MySQLConnection
 
 
-class LangueRepository:
+class LangueOrm:
     """Repository pour la gestion des langues en base de données"""
 
     @staticmethod
@@ -130,7 +130,7 @@ class LangueRepository:
         """
         famille_id = None
         if branche_en:
-            famille_id = LangueRepository.get_famille_id_by_branche(branche_en)
+            famille_id = LangueOrm.get_famille_id_by_branche(branche_en)
 
         query = """
             REPLACE INTO Langues 
@@ -156,9 +156,7 @@ class LangueRepository:
         for langue in langues:
             famille_id = None
             if langue.get("branche_en"):
-                famille_id = LangueRepository.get_famille_id_by_branche(
-                    langue["branche_en"]
-                )
+                famille_id = LangueOrm.get_famille_id_by_branche(langue["branche_en"])
 
             query = """
                 REPLACE INTO Langues 
@@ -248,7 +246,7 @@ class LangueRepository:
         """
         famille_id = None
         if branche_en:
-            famille_id = LangueRepository.get_famille_id_by_branche(branche_en)
+            famille_id = LangueOrm.get_famille_id_by_branche(branche_en)
 
         query = """
             INSERT INTO Langues 

@@ -1,6 +1,6 @@
 from datetime import date
 from typing import List, Optional
-from orm.week_meteo_orm import WeekMeteoRepository
+from orm.week_meteo_orm import WeekMeteoOrm
 from models.week_meteo import WeekMeteo
 
 
@@ -26,7 +26,7 @@ class MeteoService:
         Raises:
             ValueError: Si aucune donnée trouvée
         """
-        data = WeekMeteoRepository.get_range(geoname_id, start_date, end_date)
+        data = WeekMeteoOrm.get_range(geoname_id, start_date, end_date)
         if not data:
             raise ValueError("Aucune donnée hebdomadaire")
         return data
@@ -42,7 +42,7 @@ class MeteoService:
         Returns:
             Liste des semaines météo
         """
-        return WeekMeteoRepository.get_all(skip, limit)
+        return WeekMeteoOrm.get_all(skip, limit)
 
     @staticmethod
     def create_or_update(week_data: WeekMeteo) -> WeekMeteo:
@@ -54,7 +54,7 @@ class MeteoService:
         Returns:
             Semaine créée/mise à jour
         """
-        return WeekMeteoRepository.upsert(week_data)
+        return WeekMeteoOrm.upsert(week_data)
 
     @staticmethod
     def bulk_create_or_update(items: List[WeekMeteo]) -> int:
@@ -66,7 +66,7 @@ class MeteoService:
         Returns:
             Nombre de lignes upsertées
         """
-        return WeekMeteoRepository.bulk_upsert(items)
+        return WeekMeteoOrm.bulk_upsert(items)
 
     @staticmethod
     def update_partial(
@@ -85,7 +85,7 @@ class MeteoService:
         Raises:
             ValueError: Si la semaine n'existe pas
         """
-        existing = WeekMeteoRepository.get_by_pk(geoname_id, week_start_date)
+        existing = WeekMeteoOrm.get_by_pk(geoname_id, week_start_date)
         if existing is None:
             raise ValueError("Semaine non trouvée")
 
@@ -93,7 +93,7 @@ class MeteoService:
         for k, v in changes.items():
             data[k] = v
 
-        return WeekMeteoRepository.upsert(WeekMeteo(**data))
+        return WeekMeteoOrm.upsert(WeekMeteo(**data))
 
     @staticmethod
     def delete(geoname_id: int, week_start_date: date) -> bool:
@@ -106,4 +106,4 @@ class MeteoService:
         Returns:
             True si supprimée, False si non trouvée
         """
-        return WeekMeteoRepository.delete(geoname_id, week_start_date)
+        return WeekMeteoOrm.delete(geoname_id, week_start_date)

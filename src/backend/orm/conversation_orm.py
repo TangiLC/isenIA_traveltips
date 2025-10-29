@@ -1,10 +1,10 @@
 from typing import List, Optional, Dict, Any
-from bson import ObjectId 
-from bson.errors import InvalidId 
+from bson import ObjectId
+from bson.errors import InvalidId
 from connexion.mongo_connect import MongoDBConnection
 
 
-class ConversationRepository:
+class ConversationOrm:
     """Repository pour la gestion des conversations (collection conversations)"""
 
     COLLECTION_NAME = "conversations"
@@ -22,7 +22,7 @@ class ConversationRepository:
         try:
             obj_id = ObjectId(conversation_id)
             return MongoDBConnection.find_one(
-                ConversationRepository.COLLECTION_NAME, {"_id": obj_id}
+                ConversationOrm.COLLECTION_NAME, {"_id": obj_id}
             )
         except InvalidId:
             return None
@@ -38,9 +38,7 @@ class ConversationRepository:
         Returns:
             Liste de conversations
         """
-        collection = MongoDBConnection.get_collection(
-            ConversationRepository.COLLECTION_NAME
-        )
+        collection = MongoDBConnection.get_collection(ConversationOrm.COLLECTION_NAME)
         cursor = collection.find().skip(skip).limit(limit)
         return list(cursor)
 
@@ -56,7 +54,7 @@ class ConversationRepository:
             Liste de conversations
         """
         return MongoDBConnection.find(
-            ConversationRepository.COLLECTION_NAME,
+            ConversationOrm.COLLECTION_NAME,
             {"lang639-2": lang_code.lower()},
             limit=limit,
         )
@@ -72,7 +70,7 @@ class ConversationRepository:
             str: ID de la conversation créée
         """
         result = MongoDBConnection.insert_one(
-            ConversationRepository.COLLECTION_NAME, conversation_data
+            ConversationOrm.COLLECTION_NAME, conversation_data
         )
         return str(result.inserted_id)
 
@@ -90,7 +88,7 @@ class ConversationRepository:
         try:
             obj_id = ObjectId(conversation_id)
             result = MongoDBConnection.update_one(
-                ConversationRepository.COLLECTION_NAME, {"_id": obj_id}, update_data
+                ConversationOrm.COLLECTION_NAME, {"_id": obj_id}, update_data
             )
             return result.modified_count
         except InvalidId:
@@ -109,7 +107,7 @@ class ConversationRepository:
         try:
             obj_id = ObjectId(conversation_id)
             result = MongoDBConnection.delete_one(
-                ConversationRepository.COLLECTION_NAME, {"_id": obj_id}
+                ConversationOrm.COLLECTION_NAME, {"_id": obj_id}
             )
             return result.deleted_count
         except InvalidId:
@@ -122,7 +120,7 @@ class ConversationRepository:
         Returns:
             int: Nombre de conversations
         """
-        return MongoDBConnection.count_documents(ConversationRepository.COLLECTION_NAME)
+        return MongoDBConnection.count_documents(ConversationOrm.COLLECTION_NAME)
 
     @staticmethod
     def count_by_lang(lang_code: str) -> int:
@@ -135,7 +133,7 @@ class ConversationRepository:
             int: Nombre de conversations
         """
         return MongoDBConnection.count_documents(
-            ConversationRepository.COLLECTION_NAME, {"lang639-2": lang_code.lower()}
+            ConversationOrm.COLLECTION_NAME, {"lang639-2": lang_code.lower()}
         )
 
     @staticmethod
@@ -153,7 +151,7 @@ class ConversationRepository:
             Liste de conversations
         """
         return MongoDBConnection.find(
-            ConversationRepository.COLLECTION_NAME,
+            ConversationOrm.COLLECTION_NAME,
             {field_name: field_value},
             limit=limit,
         )
@@ -170,6 +168,4 @@ class ConversationRepository:
             {"$sort": {"count": -1}},
             {"$project": {"_id": 0, "lang_code": "$_id", "count": 1}},
         ]
-        return MongoDBConnection.aggregate(
-            ConversationRepository.COLLECTION_NAME, pipeline
-        )
+        return MongoDBConnection.aggregate(ConversationOrm.COLLECTION_NAME, pipeline)

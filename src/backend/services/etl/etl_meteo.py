@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from models.week_meteo import WeekMeteo
-from src.backend.orm.week_meteo_orm import WeekMeteoRepository
+from src.backend.orm.week_meteo_orm import WeekMeteoOrm
 from utils.utils import ETLUtils
 
 
@@ -103,7 +103,7 @@ class MeteoETL:
         Renvoie un set vide si la table est vide ou n'existe pas.
         """
         try:
-            existing = WeekMeteoRepository.get_existing_geoname_ids()
+            existing = WeekMeteoOrm.get_existing_geoname_ids()
             print(f"{len(existing)} villes trouvées en base")
             return existing
         except Exception as e:
@@ -234,7 +234,7 @@ class MeteoETL:
         if weekly_df.empty:
             return 0
 
-        repo = WeekMeteoRepository()
+        repo = WeekMeteoOrm()
 
         # Conversion en objets WeekMeteo
         items = []

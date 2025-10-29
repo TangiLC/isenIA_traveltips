@@ -5,7 +5,7 @@ from models.week_meteo import WeekMeteo
 from connexion.mysql_connect import MySQLConnection
 
 
-class WeekMeteoRepository:
+class WeekMeteoOrm:
     """Accès table Meteo_Weekly (clé unique: geoname_id + week_start_date)."""
 
     @staticmethod
@@ -101,7 +101,7 @@ class WeekMeteoRepository:
         )
         MySQLConnection.execute_update(q, params)
         MySQLConnection.commit()
-        return WeekMeteoRepository.get_by_pk(item.geoname_id, item.week_start_date)
+        return WeekMeteoOrm.get_by_pk(item.geoname_id, item.week_start_date)
 
     @staticmethod
     def bulk_upsert(items: Iterable[WeekMeteo]) -> int:

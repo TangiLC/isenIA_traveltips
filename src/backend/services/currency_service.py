@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from connexion.mysql_connect import MySQLConnection
-from orm.currency_orm import CurrencyRepository
+from orm.currency_orm import CurrencyOrm
 
 
 class CurrencyService:
@@ -21,7 +21,7 @@ class CurrencyService:
         """
         try:
             MySQLConnection.connect()
-            result = CurrencyRepository.find_by_iso4217(code)
+            result = CurrencyOrm.find_by_iso4217(code)
 
             if not result:
                 raise ValueError(f"Devise avec le code '{code}' introuvable")
@@ -42,7 +42,7 @@ class CurrencyService:
         """
         try:
             MySQLConnection.connect()
-            return CurrencyRepository.find_by_name_or_symbol(search_term)
+            return CurrencyOrm.find_by_name_or_symbol(search_term)
         finally:
             MySQLConnection.close()
 
@@ -59,7 +59,7 @@ class CurrencyService:
         try:
             MySQLConnection.connect()
 
-            rows = CurrencyRepository.create_or_replace(
+            rows = CurrencyOrm.create_or_replace(
                 iso4217=currency_data["iso4217"],
                 name=currency_data["name"],
                 symbol=currency_data["symbol"],
@@ -91,7 +91,7 @@ class CurrencyService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = CurrencyRepository.find_by_iso4217(iso4217)
+            existing = CurrencyOrm.find_by_iso4217(iso4217)
             if not existing:
                 raise ValueError(f"Devise avec le code '{iso4217}' introuvable")
 
@@ -101,7 +101,7 @@ class CurrencyService:
             if not updates_filtered:
                 raise ValueError("Aucun champ à mettre à jour")
 
-            rows = CurrencyRepository.update_partial(iso4217, updates_filtered)
+            rows = CurrencyOrm.update_partial(iso4217, updates_filtered)
             MySQLConnection.commit()
             return rows
         except Exception as e:
@@ -127,11 +127,11 @@ class CurrencyService:
             MySQLConnection.connect()
 
             # Vérifier existence
-            existing = CurrencyRepository.find_by_iso4217(iso4217)
+            existing = CurrencyOrm.find_by_iso4217(iso4217)
             if not existing:
                 raise ValueError(f"Devise avec le code '{iso4217}' introuvable")
 
-            rows = CurrencyRepository.delete(iso4217)
+            rows = CurrencyOrm.delete(iso4217)
             MySQLConnection.commit()
             return rows
         except Exception as e:

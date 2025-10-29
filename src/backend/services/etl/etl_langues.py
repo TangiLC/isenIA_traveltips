@@ -6,8 +6,8 @@ from pathlib import Path
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
 from connexion.mongo_connect import MongoDBConnection
-from orm.langue_repository import LangueRepository
-from src.backend.orm.conversation_orm import ConversationRepository
+from orm.langue_repository import LangueOrm
+from src.backend.orm.conversation_orm import ConversationOrm
 
 
 class LanguageETL:
@@ -180,7 +180,7 @@ class LanguageETL:
                 """Vérifie si le code ISO existe dans MongoDB"""
                 try:
                     count = MongoDBConnection.count_documents(
-                        ConversationRepository.COLLECTION_NAME,
+                        ConversationOrm.COLLECTION_NAME,
                         {"lang639-2": str(iso_code).lower()},
                     )
                     return count > 0
@@ -272,7 +272,7 @@ class LanguageETL:
             for index, row in df.iterrows():
                 try:
                     # Utilisation du repository pour l'insertion
-                    rowcount = LangueRepository.insert_ignore(
+                    rowcount = LangueOrm.insert_ignore(
                         iso639_2=row["639-2"],
                         name_en=row["name_en"],
                         name_fr=row["name_fr"],

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from schemas.country_dto import CountryCreate, CountryUpdate, CountryResponse
 from services.country_service import CountryService
 
-# from repositories.country_repository import CountryRepository
+# from repositories.country_repository import CountryOrm
 # from connexion.mysql_connect import MySQLConnection
 from security.security import Security
 

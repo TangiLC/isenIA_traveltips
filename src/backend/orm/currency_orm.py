@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from connexion.mysql_connect import MySQLConnection
 
 
-class CurrencyRepository:
+class CurrencyOrm:
     """Repository pour la gestion des devises (table Monnaies)"""
 
     @staticmethod

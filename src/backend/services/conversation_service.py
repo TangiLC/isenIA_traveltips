@@ -1,7 +1,7 @@
 from typing import Dict, Any, Tuple
 from connexion.mysql_connect import MySQLConnection
-from orm.conversation_orm import ConversationRepository
-from orm.langue_orm import LangueRepository
+from orm.conversation_orm import ConversationOrm
+from orm.langue_orm import LangueOrm
 
 
 class ConversationService:
@@ -18,7 +18,7 @@ class ConversationService:
         try:
             MySQLConnection.connect()
 
-            langue = LangueRepository.find_by_iso639_2(lang_code)
+            langue = LangueOrm.find_by_iso639_2(lang_code)
 
             if not langue:
                 print(
@@ -26,7 +26,7 @@ class ConversationService:
                 )
                 return
 
-            LangueRepository.update_partial(lang_code, {"is_in_mongo": is_in_mongo})
+            LangueOrm.update_partial(lang_code, {"is_in_mongo": is_in_mongo})
             print(f"[INFO] Langue '{lang_code}' -> is_in_mongo = {is_in_mongo}")
 
         except Exception as e:
@@ -44,7 +44,7 @@ class ConversationService:
         Returns:
             Tuple (conversation_id, lang_code)
         """
-        conversation_id = ConversationRepository.create(conversation_data)
+        conversation_id = ConversationOrm.create(conversation_data)
 
         lang_code = conversation_data.get("lang639-2")
         if lang_code:
@@ -67,7 +67,7 @@ class ConversationService:
         """
         lang_code = existing_conversation.get("lang639-2")
 
-        deleted_count = ConversationRepository.delete(conversation_id)
+        deleted_count = ConversationOrm.delete(conversation_id)
 
         if lang_code:
             ConversationService._sync_langue_status(lang_code, False)

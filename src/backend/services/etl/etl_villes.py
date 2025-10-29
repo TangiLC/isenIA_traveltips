@@ -9,7 +9,7 @@ import time
 
 sys.path.insert(0, Path(__file__).resolve().parents[3])
 from connexion.mysql_connect import MySQLConnection
-from src.backend.orm.ville_orm import VilleRepository
+from src.backend.orm.ville_orm import VilleOrm
 from utils.utils import ETLUtils
 
 
@@ -200,7 +200,7 @@ class ETLVille:
             total_inserted = 0
             for i in range(0, len(records), batch_size):
                 batch = records[i : i + batch_size]
-                rows_affected = VilleRepository.bulk_insert_ignore(batch)
+                rows_affected = VilleOrm.bulk_insert_ignore(batch)
                 total_inserted += rows_affected
                 if (i + batch_size) % 10000 == 0:
                     print(f"{i + batch_size}/{len(records)} lignes traitées...")
