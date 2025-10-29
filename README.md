@@ -162,7 +162,7 @@ TravelTips/
     │   ├── schemas/            # Schémas Pydantic (validation)
     │   ├── routers/            # Routes API (endpoints)
     │   ├── services/           # ETL et logique métier
-    │   ├── repositories/       # Couche d'accès aux données
+    │   ├── orms/               # Couche d'accès aux données
     │   ├── connexion/          # Gestion des connexions BDD
     │   ├── security/           # Authentification & autorisation
     │   └── utils/              # Utilitaires génériques
@@ -219,7 +219,7 @@ TravelTips/
 │                    API BACKEND                         │
 │  FastAPI · JWT Auth · OpenAPI Docs                     │
 │     ┌──────────┐    ┌──────────┐   ┌──────────┐        │
-│     │ Routers  │──▶│ Services │──▶│  Repos   │        │
+│     │ Routers  │──▶│ Services │──▶│   ORMs   │        │
 │     └──────────┘    └──────────┘   └──────────┘        │
 │         │                                              │
 │         └─── Port 8000 (http://localhost:8000)         │
