@@ -84,7 +84,6 @@ Ce projet a été développé dans un contexte éducatif, inspiré par des resso
 | **Python 3.11+**       | Langage principal                       |
 | **FastAPI**            | Framework API RESTful                   |
 | **Pydantic**           | Validation et sérialisation des données |
-| **SQLAlchemy**         | ORM pour MySQL                          |
 | **PyMongo**            | Client MongoDB                          |
 | **PyJWT**              | Génération et validation JWT            |
 | **bcrypt**             | Hashage de mots de passe                |
@@ -138,9 +137,10 @@ TravelTips/
 ├── requirements.txt            # Dépendances Python
 ├── LICENSE                     # Licence MIT
 ├── README.md                   # _Ce fichier_
-├── RAW_SOURCES.md              # Documentation détaillée des sources
-├── DATABASE.md                 # Schéma et structure de la base de données
-├── API_ENDPOINTS.md            # Liste complète des endpoints
+├── Documentation/
+│   ├── RAW_SOURCES.md          # Documentation détaillée des sources
+│   ├── DATABASE.md             # Schéma et structure de la base de données
+│   ├── API_ENDPOINTS.md        # Liste complète des endpoints
 │
 ├── raw_sources/                # Fichiers sources bruts (CSV, JSON, YAML, TXT)
 │   ├── countries_en.csv
@@ -153,7 +153,7 @@ TravelTips/
 │
 └── src/
     │
-    ├── main_etl.py             #  Point d'entrée ETL (population BDD)
+    ├── main_etl.py             #  Point d'entrée orchestrateur ETLs (population BDD)
     ├── main_multithread.py     #  Lancement simultané API + Frontend
     │
     ├── backend/
@@ -161,7 +161,7 @@ TravelTips/
     │   ├── models/             # Modèles SQLAlchemy & MongoDB
     │   ├── schemas/            # Schémas Pydantic (validation)
     │   ├── routers/            # Routes API (endpoints)
-    │   ├── services/           # ETL et logique métier
+    │   ├── services/           # ETLs et logique métier
     │   ├── orms/               # Couche d'accès aux données
     │   ├── connexion/          # Gestion des connexions BDD
     │   ├── security/           # Authentification & autorisation
@@ -172,7 +172,7 @@ TravelTips/
     │   ├── components/         # Composants réutilisables
     │   └── services/           # Requêtes vers l'API backend
     ├── db/
-    │   ├── xx.csv              #  Archives des fichiers après traitement ETL
+    │   ├── xxx.csv             #  Archives des fichiers après traitement ETL
     │   ├── init_script.sql     #  Création initiale des tables
     │   └── alter_script.sql    #  Ajout des contraintes FK (après ETL)
     └── static/

@@ -71,14 +71,13 @@ def health_check():
 
 
 def main():
-    # Pilotable par variables d’environnement
+
     host = os.getenv("FASTAPI_HOST", "0.0.0.0")
     port = int(os.getenv("FASTAPI_PORT", "8000"))
     reload_flag = os.getenv("FASTAPI_RELOAD", "true").lower() in {"1", "true", "yes"}
-    # workers n’est utile que sans reload
     workers = int(os.getenv("FASTAPI_WORKERS", "1"))
     if reload_flag and workers != 1:
-        workers = 1  # sécurité: uvicorn ne supporte pas reload + workers>1
+        workers = 1
 
     uvicorn.run(
         "fastapi_main:app",
@@ -86,7 +85,6 @@ def main():
         port=port,
         reload=reload_flag,
         workers=workers if not reload_flag else 1,
-        # log_level peut aussi être lu depuis l’env si besoin
     )
 
 
