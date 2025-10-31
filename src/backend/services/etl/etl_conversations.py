@@ -170,7 +170,7 @@ class ConversationETL:
 
     def run(self):
         """Exécute le pipeline ETL complet"""
-        print("=== ETL CONVERSATIONS (POO) ===\n")
+        print("=== ETL CONVERSATIONS ===\n")
 
         # EXTRACTION
         print("--- PHASE EXTRACTION ---")

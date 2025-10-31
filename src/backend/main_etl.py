@@ -17,16 +17,12 @@ from services.etl import (
     etl_elec1,
     etl_langues,
     etl_meteo,
+    etl_villes,
 )
 
 # Ajout du chemin pour les imports
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-
-# Import des ETL
-from services.etl import (
-    etl_villes,
-)
 
 
 class ETLOrchestrator:
