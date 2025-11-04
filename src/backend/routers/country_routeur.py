@@ -173,6 +173,39 @@ def update_country(
         raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
 
 
+@router.patch(
+    "/{alpha2}",
+    response_model=CountryResponse,
+    summary="Modifier partiellement un pays",
+    description="Modifier certaines données d'un pays existant (update partiel)",
+    responses={
+        200: {"description": "Pays modifié avec succès"},
+        403: {"description": "Accès interdit (route sécurisée par JWT)"},
+        404: {"description": "Pays non trouvé"},
+        422: {"description": "Format des données incompatible"},
+        500: {"description": "Erreur serveur"},
+    },
+)
+def patch_country(
+    alpha2: str, country: CountryUpdate, _=Depends(Security.secured_route)
+):
+    """
+    Met à jour partiellement un pays existant
+    Seuls les champs fournis sont modifiés
+    Nécessite une authentification JWT (admin)
+    """
+    try:
+        return CountryService.update(alpha2, country.model_dump(exclude_unset=True))
+    except ValueError as e:
+        if "2 caractères" in str(e):
+            status_code = 400
+        else:
+            status_code = 404
+        raise HTTPException(status_code=status_code, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur serveur: {str(e)}")
+
+
 @router.delete(
     "/{alpha2}",
     response_model=dict,
