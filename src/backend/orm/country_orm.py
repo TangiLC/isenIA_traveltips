@@ -1,23 +1,12 @@
 from typing import Iterable, List, Tuple, Optional, Dict, Any
 from connexion.mysql_connect import MySQLConnection
+from utils.utils import ETLUtils
 import unicodedata
 import json
 
 
 class CountryOrm:
     """Repository pour Pays et tables de liaison"""
-
-    # --- UTILITAIRES --------------------------------------------------------
-    @staticmethod
-    def _normalize_string(text: str) -> str:
-        """Normalise une chaîne : minuscules, sans accents"""
-        text = text.lower().strip()
-        text = "".join(
-            c
-            for c in unicodedata.normalize("NFD", text)
-            if unicodedata.category(c) != "Mn"
-        )
-        return text
 
     # --- PAYS - LECTURE -----------------------------------------------------
     @staticmethod
@@ -26,7 +15,7 @@ class CountryOrm:
         Récupère un pays par son code ISO alpha-2 avec toutes ses relations enrichies
         Utilise JSON_ARRAYAGG pour agréger les objets complets
         """
-        iso2 = iso2.lower().strip()
+        iso2 = ETLUtils.normalize_iso_code(iso2, 2)
 
         # Requête principale avec les données de base
         query_base = """
@@ -173,8 +162,7 @@ class CountryOrm:
         Recherche insensible à la casse et aux accents
         Approche en 2 étapes : récupération des codes ISO puis appel à get_by_alpha2()
         """
-        normalized = CountryOrm._normalize_string(name)
-        search_pattern = f"%{normalized}%"
+        search_pattern = ETLUtils.normalize_search_pattern(name)
 
         # Étape 1 : Récupérer les codes ISO 3166-1 alpha-2 correspondants
         query_iso = """
@@ -286,7 +274,7 @@ class CountryOrm:
         if not rows:
             return 0
         return MySQLConnection.execute_update(
-            "INSERT INTO Pays_Langues (country_3166a2, iso639_2) VALUES (%s, %s)",
+            "INSERT INTO Pays_Langues (country_iso3166a2, iso639_2) VALUES (%s, %s)",
             rows,
         )
 
@@ -307,7 +295,7 @@ class CountryOrm:
         if not rows:
             return 0
         return MySQLConnection.execute_update(
-            "INSERT INTO Pays_Monnaies (country_3166a2, iso4217) VALUES (%s, %s)",
+            "INSERT INTO Pays_Monnaies (country_iso3166a2, iso4217) VALUES (%s, %s)",
             rows,
         )
 
@@ -317,7 +305,7 @@ class CountryOrm:
         """
         Règles:
           - Interdire doubles fr/fr
-          - Insérer uniquement dans l'ordre alphabétique pour éviter la symétrie (a,b) avec a < b
+          - Insérer uniquement dans l'ordre alphabétique pour éviter la symétrie (a,b)/(b,a) avec a < b
         """
         rows: List[Tuple[str, str]] = []
         seen = set()

@@ -12,10 +12,8 @@ class ConversationOrm:
     @staticmethod
     def find_by_id(conversation_id: str) -> Optional[Dict[str, Any]]:
         """Recherche une conversation par son _id
-
         Args:
             conversation_id (str): ID de la conversation
-
         Returns:
             Dict ou None si non trouvée
         """
@@ -30,11 +28,9 @@ class ConversationOrm:
     @staticmethod
     def find_all(limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
         """Retourne toutes les conversations avec pagination
-
         Args:
             limit (int): Nombre max de résultats
             skip (int): Nombre de documents à ignorer
-
         Returns:
             Liste de conversations
         """
@@ -45,11 +41,9 @@ class ConversationOrm:
     @staticmethod
     def find_by_lang(lang_code: str, limit: int = 100) -> List[Dict[str, Any]]:
         """Recherche des conversations par code langue
-
         Args:
             lang_code (str): Code ISO 639-2
             limit (int): Nombre max de résultats
-
         Returns:
             Liste de conversations
         """
@@ -62,10 +56,8 @@ class ConversationOrm:
     @staticmethod
     def create(conversation_data: Dict[str, Any]) -> str:
         """Crée une nouvelle conversation
-
         Args:
             conversation_data (dict): Données de la conversation
-
         Returns:
             str: ID de la conversation créée
         """
@@ -77,11 +69,9 @@ class ConversationOrm:
     @staticmethod
     def update(conversation_id: str, update_data: Dict[str, Any]) -> int:
         """Met à jour une conversation
-
         Args:
             conversation_id (str): ID de la conversation
             update_data (dict): Données à mettre à jour (opération $set)
-
         Returns:
             int: Nombre de documents modifiés
         """
@@ -97,10 +87,8 @@ class ConversationOrm:
     @staticmethod
     def delete(conversation_id: str) -> int:
         """Supprime une conversation
-
         Args:
             conversation_id (str): ID de la conversation
-
         Returns:
             int: Nombre de documents supprimés
         """
@@ -116,7 +104,6 @@ class ConversationOrm:
     @staticmethod
     def count_all() -> int:
         """Compte le nombre total de conversations
-
         Returns:
             int: Nombre de conversations
         """
@@ -125,10 +112,8 @@ class ConversationOrm:
     @staticmethod
     def count_by_lang(lang_code: str) -> int:
         """Compte les conversations par langue
-
         Args:
             lang_code (str): Code ISO 639-2
-
         Returns:
             int: Nombre de conversations
         """
@@ -141,12 +126,10 @@ class ConversationOrm:
         field_name: str, field_value: Any, limit: int = 50
     ) -> List[Dict[str, Any]]:
         """Recherche générique par n'importe quel champ
-
         Args:
             field_name (str): Nom du champ
             field_value (Any): Valeur recherchée
             limit (int): Nombre max de résultats
-
         Returns:
             Liste de conversations
         """
@@ -159,7 +142,6 @@ class ConversationOrm:
     @staticmethod
     def aggregate_by_lang() -> List[Dict[str, Any]]:
         """Agrégation: compte les conversations par langue
-
         Returns:
             Liste de statistiques par langue
         """

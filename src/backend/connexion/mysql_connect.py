@@ -93,16 +93,16 @@ class MySQLConnection:
             cls.connect()
         with open(path, "r", encoding="utf-8") as f:
             sql = f.read()
-        # Supprimer les commentaires sur une ligne
+
         sql = "\n".join(
             line
             for line in sql.splitlines()
             if not line.strip().startswith(("--", "#"))
         )
-        # Découper sur ';' et ignorer les instructions vides
+
         statements = [stmt.strip() for stmt in sql.split(";") if stmt.strip()]
         for stmt in statements:
-            if stmt:  # Éviter les requêtes vides
+            if stmt:
                 try:
                     cls.execute_update(stmt)
                 except Error as e:
@@ -184,17 +184,13 @@ class MySQLConnection:
             raise
 
 
-# Exemple d'utilisation
 if __name__ == "__main__":
     try:
-        # Connexion
         MySQLConnection.connect()
 
-        # Test de requête
         result = MySQLConnection.execute_query("SELECT DATABASE()")
         print(f"Base de données active: {result}")
 
-        # Test sur la table Famille
         familles = MySQLConnection.execute_query("SELECT * FROM Familles LIMIT 5")
         print(f"\nFamilles linguistiques: {familles}")
 

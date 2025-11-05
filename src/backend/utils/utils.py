@@ -9,7 +9,38 @@ class ETLUtils:
     """Classe utilitaire regroupant les méthodes communes aux différents ETL"""
 
     # ========== NORMALISATION ET SIMILARITÉ DE TEXTE ==========
-    # Méthodes issues de etl_villes.py
+    @staticmethod
+    def normalize_iso_code(code: str, length: int) -> str:
+        """
+        Normalise un code ISO (trim + casse appropriée).
+
+        Args:
+            code: Code à normaliser
+            length: Longueur attendue (2 ou 3)
+
+        Returns:
+            Code normalisé (upper pour ISO4217, lower pour autres)
+        """
+        if not code:
+            return ""
+        code = code.strip()
+        # ISO 4217 (monnaies) en majuscules, autres en minuscules
+        return code.upper() if length == 3 and code.isalpha() else code.lower()
+
+    @staticmethod
+    def normalize_search_pattern(term: str) -> str:
+        """
+        Prépare un terme de recherche pour LIKE (ajoute % et nettoie).
+
+        Args:
+            term: Terme de recherche
+
+        Returns:
+            Pattern SQL avec % de chaque côté
+        """
+        if not term:
+            return "%%"
+        return f"%{term.strip()}%"
 
     @staticmethod
     def normalize(s: str) -> str:

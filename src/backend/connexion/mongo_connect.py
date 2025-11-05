@@ -23,11 +23,10 @@ class MongoDBConnection:
             "database": os.getenv("MONGO_DATABASE"),
             "username": os.getenv("MONGO_ROOT_USER"),
             "password": os.getenv("MONGO_ROOT_PASSWORD"),
-            "authSource": "admin",  # Base d'authentification
+            "authSource": "admin",
             "serverSelectionTimeoutMS": 5000,
         }
 
-        # Vérifier que les paramètres obligatoires sont présents
         required_fields = ["database", "username", "password"]
         missing_fields = [field for field in required_fields if not config.get(field)]
 
@@ -318,27 +317,21 @@ class MongoDBConnection:
             raise
 
 
-# Exemple d'utilisation
 if __name__ == "__main__":
     try:
-        # Connexion
         MongoDBConnection.connect()
 
-        # Test: Lister les collections
         collections = MongoDBConnection.db.list_collection_names()
         print(f"Collections disponibles: {collections}")
 
-        # Test: Insérer un document
         test_doc = {"nom": "Test", "description": "Document de test", "actif": True}
         result = MongoDBConnection.insert_one("test_collection", test_doc)
 
-        # Test: Rechercher des documents
         documents = MongoDBConnection.find("test_collection", limit=5)
         print(f"\nDocuments trouvés: {len(documents)}")
         for doc in documents:
             print(doc)
 
-        # Test: Compter les documents
         count = MongoDBConnection.count_documents("test_collection")
         print(f"\nNombre total de documents: {count}")
 
